@@ -1,0 +1,6 @@
+[package]
+name = "crb"
+version = "0.1.0"
+authors = ["Jess Kenney <jess@jesskenney.com>", "Miles Steele <miles@milessteele.com>"]
+
+[dependencies]
