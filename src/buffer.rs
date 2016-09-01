@@ -1,26 +1,27 @@
-use std::env;
 use std::fs;
 use std::io;
 use std::io::Read;
 
-struct Buffer {
-   contents: String,
+pub struct Buffer {
+    contents: String,
 }
 
 impl Buffer {
-   fn new(contents: String) -> Buffer {
-       Buffer {
-	contents: contents
-       }
-   }
+    fn new(contents: String) -> Buffer {
+        Buffer { contents: contents }
+    }
 
-   fn load_from_file(path: String) -> Result<Buffer, io::Error> {
-       Ok(Buffer{contents: try!(read_file(path))})
-   }
+    pub fn load_from_file(path: String) -> Result<Buffer, io::Error> {
+        Ok(Buffer { contents: try!(read_file(path)) })
+    }
 
-   fn print(&self) {
-       println!("{}", self.contents)
-   }
+    fn print(&self) {
+        println!("{}", self.contents)
+    }
+
+    pub fn head(&self, n: usize) -> String {
+        self.contents[..n].to_string()
+    }
 }
 
 fn open_file(path: String) {

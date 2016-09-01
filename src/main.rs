@@ -25,6 +25,8 @@ fn startup() -> Result<(), Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
+    let buf1 = try!(buffer::Buffer::load_from_file("README.md".to_string()));
+
     rustbox.print(1, 1, rustbox::RB_NORMAL, Color::White, Color::Black, "Oi!");
 
     rustbox.print(1,
@@ -33,6 +35,13 @@ fn startup() -> Result<(), Box<Error>> {
                   Color::White,
                   Color::Black,
                   "Press 'q' to quit.");
+
+    rustbox.print(1,
+                  5,
+                  rustbox::RB_NORMAL,
+                  Color::White,
+                  Color::Black,
+                  &buf1.head(60));
 
     let mut cursory = 4;
     loop {
