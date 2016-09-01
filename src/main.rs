@@ -1,5 +1,7 @@
 extern crate rustbox;
 
+mod buffer;
+
 use std::default::Default;
 use std::env;
 use std::fs;
