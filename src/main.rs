@@ -1,9 +1,63 @@
+extern crate rustbox;
+
+use std::default::Default;
 use std::env;
 use std::fs;
 use std::io;
 use std::io::Read;
+use std::error::Error;
+
+use rustbox::{Color, RustBox};
+use rustbox::Key;
 
 fn main() {
+    match startup() {
+        Ok(_) => {}
+        Err(e) => println!("Fatal error: {}", e),
+    }
+}
+
+fn startup() -> Result<(), Box<Error>> {
+    let rustbox = match RustBox::init(Default::default()) {
+        Result::Ok(v) => v,
+        Result::Err(e) => return Err(Box::new(e)),
+    };
+
+    rustbox.print(1, 1, rustbox::RB_NORMAL, Color::White, Color::Black, "Oi!");
+
+    rustbox.print(1,
+                  3,
+                  rustbox::RB_NORMAL,
+                  Color::White,
+                  Color::Black,
+                  "Press 'q' to quit.");
+
+    let mut cursory = 4;
+    loop {
+        rustbox.set_cursor(10, cursory);
+
+        rustbox.present();
+
+        match rustbox.poll_event(false) {
+            Ok(rustbox::Event::KeyEvent(key)) => {
+                match key {
+                    Key::Char('q') => {
+                        break;
+                    }
+                    Key::Char('j') => {
+                        cursory += 1;
+                    }
+                    Key::Char('k') => {
+                        cursory -= 1;
+                    }
+                    _ => {}
+                }
+            }
+            Err(e) => panic!("{}", e),
+            _ => {}
+        }
+    }
+
     println!("Hello, world!");
 
     if env::args().count() > 2 {
@@ -16,10 +70,10 @@ fn main() {
             println!("opening file: {}", path);
             open_file(path);
         }
-        None => {
-            println!("no file specified. making my job easy ;)")
-        }
+        None => println!("no file specified. making my job easy ;)"),
     }
+
+    Ok(())
 }
 
 fn open_file(path: String) {
