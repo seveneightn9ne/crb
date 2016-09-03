@@ -4,21 +4,25 @@ use std::io::Read;
 
 pub struct Buffer {
     pub contents: String,
+    pub file_path: Option<String>,
 }
 
 impl Buffer {
 
+    /** Creators **/
+
     pub fn load_from_file(path: String) -> Result<Buffer, io::Error> {
-        Ok(Buffer { contents: try!(read_file(path)) })
+        Ok(Buffer {
+	    contents: try!(read_file(&path)),
+	    file_path: Some(path)
+	})
     }
 
     pub fn empty() -> Buffer {
-    	Buffer{contents: "".to_string()}
+    	Buffer{contents: "".to_string(), file_path: None}
     }
 
-    fn print(&self) {
-        println!("{}", self.contents)
-    }
+    /** Observers **/
 
     pub fn head(&self, n: usize) -> String {
         self.contents[..n].to_string()
@@ -32,14 +36,7 @@ impl Buffer {
     }
 }
 
-fn open_file(path: String) {
-    match read_file(path) {
-        Ok(contents) => println!("{}", contents),
-        Err(e) => println!("Could not open file: {}", e),
-    }
-}
-
-fn read_file(path: String) -> Result<String, io::Error> {
+fn read_file(path: &String) -> Result<String, io::Error> {
     let mut f = try!(fs::File::open(path));
     let mut contents = String::new();
     try!(f.read_to_string(&mut contents));
