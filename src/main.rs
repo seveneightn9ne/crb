@@ -31,29 +31,19 @@ fn startup() -> Result<(), Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
-    let buf1 = try!(buffer::Buffer::load_from_file("LICENSE".to_string()));
+    let buf1 = match env::args().nth(1) {
+        Some(path) => try!(buffer::Buffer::load_from_file(path)),
+        None => buffer::Buffer::empty(),
+    };
 
-    let window1 = Window::new(&buf1, Point::new(4, 4), Size::new(30, 10));
+    let width = rustbox.width() as i32;
+    let height = rustbox.height() as i32;
 
-    rustbox.print(1, 1, rustbox::RB_NORMAL, Color::White, Color::Black, "Oi!");
+    let window1 = Window::new(&buf1, Point::new(0, 0), Size::new(width, height));
 
-    rustbox.print(1,
-                  3,
-                  rustbox::RB_NORMAL,
-                  Color::White,
-                  Color::Black,
-                  "Press 'q' to quit.");
-
-    rustbox.print(1,
-                  5,
-                  rustbox::RB_NORMAL,
-                  Color::White,
-                  Color::Black,
-                  &buf1.head(60));
-
-    let mut cursory = 4;
+    let mut cursor_y = 0;
     loop {
-        rustbox.set_cursor(10, cursory);
+        rustbox.set_cursor(0, cursor_y);
         graphics::render(&rustbox, &window1);
 
         rustbox.present();
@@ -65,10 +55,10 @@ fn startup() -> Result<(), Box<Error>> {
                         break;
                     }
                     Key::Char('j') => {
-                        cursory += 1;
+                        cursor_y += 1;
                     }
                     Key::Char('k') => {
-                        cursory -= 1;
+                        cursor_y -= 1;
                     }
                     _ => {}
                 }

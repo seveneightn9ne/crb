@@ -7,12 +7,13 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    fn new(contents: String) -> Buffer {
-        Buffer { contents: contents }
-    }
 
     pub fn load_from_file(path: String) -> Result<Buffer, io::Error> {
         Ok(Buffer { contents: try!(read_file(path)) })
+    }
+
+    pub fn empty() -> Buffer {
+    	Buffer{contents: "".to_string()}
     }
 
     fn print(&self) {
