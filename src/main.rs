@@ -1,6 +1,9 @@
 extern crate rustbox;
 
 mod buffer;
+mod geometry;
+mod window;
+mod graphics;
 
 use std::default::Default;
 use std::env;
@@ -11,6 +14,9 @@ use std::error::Error;
 
 use rustbox::{Color, RustBox};
 use rustbox::Key;
+
+use window::Window;
+use geometry::{Point, Size};
 
 fn main() {
     match startup() {
@@ -25,7 +31,9 @@ fn startup() -> Result<(), Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
-    let buf1 = try!(buffer::Buffer::load_from_file("README.md".to_string()));
+    let buf1 = try!(buffer::Buffer::load_from_file("LICENSE".to_string()));
+
+    let window1 = Window::new(&buf1, Point::new(4, 4), Size::new(30, 10));
 
     rustbox.print(1, 1, rustbox::RB_NORMAL, Color::White, Color::Black, "Oi!");
 
@@ -46,6 +54,7 @@ fn startup() -> Result<(), Box<Error>> {
     let mut cursory = 4;
     loop {
         rustbox.set_cursor(10, cursory);
+        graphics::render(&rustbox, &window1);
 
         rustbox.present();
 
