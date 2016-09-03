@@ -19,4 +19,11 @@ impl<'a> Window<'a> {
     pub fn line(&self, i: i32) -> &str {
         self.buf.line(i)
     }
+
+    pub fn title(&self) -> String {
+	match self.buf.file_path {
+	    Some(ref thing) => thing.clone(),
+	    None => "new file".to_string(),
+	}
+    }
 }
