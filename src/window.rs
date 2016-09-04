@@ -21,9 +21,9 @@ impl<'a> Window<'a> {
     }
 
     pub fn title(&self) -> String {
-	match self.buf.file_path {
-	    Some(ref thing) => thing.clone(),
-	    None => "new file".to_string(),
-	}
+        match self.buf.file_path {
+            Some(ref thing) => thing.clone(),
+            None => "new file".to_string(),
+        }
     }
 }

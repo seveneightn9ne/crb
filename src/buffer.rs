@@ -8,18 +8,20 @@ pub struct Buffer {
 }
 
 impl Buffer {
-
     /** Creators **/
 
     pub fn load_from_file(path: String) -> Result<Buffer, io::Error> {
         Ok(Buffer {
-	    contents: try!(read_file(&path)),
-	    file_path: Some(path)
-	})
+            contents: try!(read_file(&path)),
+            file_path: Some(path),
+        })
     }
 
     pub fn empty() -> Buffer {
-    	Buffer{contents: "".to_string(), file_path: None}
+        Buffer {
+            contents: "".to_string(),
+            file_path: None,
+        }
     }
 
     /** Observers **/

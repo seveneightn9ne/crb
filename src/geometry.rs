@@ -5,7 +5,7 @@ pub struct Point {
 
 impl Point {
     pub fn new(x: i32, y: i32) -> Point {
-        Point{x: x, y: y}
+        Point { x: x, y: y }
     }
 }
 
@@ -16,6 +16,9 @@ pub struct Size {
 
 impl Size {
     pub fn new(width: i32, height: i32) -> Size {
-        Size{width: width, height: height}
+        Size {
+            width: width,
+            height: height,
+        }
     }
 }
