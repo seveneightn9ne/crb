@@ -33,10 +33,6 @@ impl Buffer {
 
     /** Observers **/
 
-    pub fn head(&self, n: usize) -> String {
-        self.contents[..n].to_string()
-    }
-
     pub fn line(&self, i: i32) -> &str {
         match self.contents.split('\n').nth(i as usize) {
             Some(s) => s,
