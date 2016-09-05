@@ -32,7 +32,12 @@ fn startup() -> Result<(), Box<Error>> {
     };
 
     let buf1 = match env::args().nth(1) {
-        Some(path) => try!(buffer::Buffer::load_from_file(path)),
+        Some(path) => {
+            match buffer::Buffer::load_from_file(&path) {
+                Ok(buffer) => buffer,
+                _ => buffer::Buffer::new_file(&path),
+            }
+        }
         None => buffer::Buffer::empty(),
     };
 

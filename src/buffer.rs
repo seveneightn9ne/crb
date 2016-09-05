@@ -10,11 +10,18 @@ pub struct Buffer {
 impl Buffer {
     /** Creators **/
 
-    pub fn load_from_file(path: String) -> Result<Buffer, io::Error> {
+    pub fn load_from_file(path: &str) -> Result<Buffer, io::Error> {
         Ok(Buffer {
             contents: try!(read_file(&path)),
-            file_path: Some(path),
+            file_path: Some(path.to_string()),
         })
+    }
+
+    pub fn new_file(path: &str) -> Buffer {
+        Buffer {
+            contents: "".to_string(),
+            file_path: Some(path.to_string()),
+        }
     }
 
     pub fn empty() -> Buffer {
@@ -38,7 +45,7 @@ impl Buffer {
     }
 }
 
-fn read_file(path: &String) -> Result<String, io::Error> {
+fn read_file(path: &str) -> Result<String, io::Error> {
     let mut f = try!(fs::File::open(path));
     let mut contents = String::new();
     try!(f.read_to_string(&mut contents));
