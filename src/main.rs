@@ -6,6 +6,7 @@ mod window;
 mod graphics;
 mod errors;
 mod logging;
+mod mode;
 
 use std::default::Default;
 use std::env;
@@ -56,13 +57,13 @@ fn startup() -> Result<(), Box<Error>> {
 
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
-                match key {
-                    Key::Char('q') => {
-                        break;
-                    }
-                    Key::Char('j') => window1.move_cursor_vert(1),
-                    Key::Char('k') => window1.move_cursor_vert(-1),
-                    _ => {}
+                match mode::map(window1.mode.clone(), key) {
+                    mode::Command::Quit => break,
+                    mode::Command::MoveUp(n) => window1.move_cursor_vert(n as i32),
+                    mode::Command::MoveDown(n) => window1.move_cursor_vert(-(n as i32)),
+                    mode::Command::Insert(c) => window1.insert(c),
+                    mode::Command::ChangeMode(m) => window1.mode = m,
+                    _ => {}//TODO show this somewhere
                 }
             }
             Err(e) => panic!("{}", e),

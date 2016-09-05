@@ -1,12 +1,14 @@
 use std::sync::Mutex;
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
+use mode::Mode;
 use logging;
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
     pub topleft: Point,
     pub size: Size,
+    pub mode: Mode,
     cursors: Vec<Anchor>,
 }
 
@@ -23,6 +25,7 @@ impl Window {
             topleft: topleft,
             size: size,
             cursors: cursors,
+            mode: Mode::Normal,
         }
     }
 
@@ -70,5 +73,9 @@ impl Window {
         for anchor in self.cursors.iter() {
             buf.move_anchor(*anchor, 0);
         }
+    }
+
+    pub fn insert(&mut self, c: char) {
+        // TODO
     }
 }
