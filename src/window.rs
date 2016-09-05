@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
-use mode::Mode;
+use mode::{Command, Mode};
 use logging;
 
 pub struct Window {
@@ -68,10 +68,10 @@ impl Window {
         false
     }
 
-    pub fn move_cursor_vert(&mut self, dy: i32) {
+    pub fn move_cursors(&mut self, m: &Command) {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {
-            buf.move_anchor(*anchor, 0);
+            buf.move_anchor(*anchor, m);
         }
     }
 

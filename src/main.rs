@@ -57,10 +57,13 @@ fn startup() -> Result<(), Box<Error>> {
 
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
-                match mode::map(window1.mode.clone(), key) {
+                let cmd = mode::map(window1.mode.clone(), key);
+                match cmd {
                     mode::Command::Quit => break,
-                    mode::Command::MoveUp(n) => window1.move_cursor_vert(n as i32),
-                    mode::Command::MoveDown(n) => window1.move_cursor_vert(-(n as i32)),
+                    mode::Command::MoveUp(_) => window1.move_cursors(&cmd),
+                    mode::Command::MoveDown(_) => window1.move_cursors(&cmd),
+                    mode::Command::MoveLeft(_) => window1.move_cursors(&cmd),
+                    mode::Command::MoveRight(_) => window1.move_cursors(&cmd),
                     mode::Command::Insert(c) => window1.insert(c),
                     mode::Command::ChangeMode(m) => window1.mode = m,
                     _ => {}//TODO show this somewhere

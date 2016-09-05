@@ -29,18 +29,17 @@ pub fn render(rb: &RustBox, window: &Window) {
             let abs_x = window.topleft.x + rel_x;
 
             let cursor_at = window.cursor_at(rel_x, rel_y);
-            if let Some(ch) = window.char_at(rel_x, rel_y) {
-                let (fg, bg) = match cursor_at {
-                    true => (Color::Black, Color::White),
-                    false => (Color::White, Color::Black),
-                };
-                rb.print_char(abs_x as usize,
-                              abs_y as usize,
-                              rustbox::RB_NORMAL,
-                              fg,
-                              bg,
-                              ch);
-            }
+            let ch = window.char_at(rel_x, rel_y).unwrap_or(' ');
+            let (fg, bg) = match cursor_at {
+                true => (Color::Black, Color::White),
+                false => (Color::White, Color::Black),
+            };
+            rb.print_char(abs_x as usize,
+                          abs_y as usize,
+                          rustbox::RB_NORMAL,
+                          fg,
+                          bg,
+                          ch);
         }
     }
 }
