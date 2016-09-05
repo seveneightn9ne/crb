@@ -1,5 +1,6 @@
 use rustbox;
 use rustbox::{RustBox, Color};
+use logging;
 
 use window::Window;
 

@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
+use logging;
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
@@ -21,7 +22,7 @@ impl Window {
             buf: buf,
             topleft: topleft,
             size: size,
-            cursors: Vec::new(),
+            cursors: cursors,
         }
     }
 

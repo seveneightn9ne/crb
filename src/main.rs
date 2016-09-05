@@ -5,6 +5,7 @@ mod geometry;
 mod window;
 mod graphics;
 mod errors;
+mod logging;
 
 use std::default::Default;
 use std::env;
@@ -18,6 +19,7 @@ use window::Window;
 use geometry::{Point, Size};
 
 fn main() {
+    logging::debug("Startup");
     match startup() {
         Ok(_) => {}
         Err(e) => println!("Fatal error: {}", e),

@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::io::Read;
 use std::collections::HashMap;
+use logging;
 
 use errors::CrbError;
 
@@ -92,6 +93,7 @@ impl Buffer {
         let p: &mut Position = try!(self.anchors.get_mut(&anchor.id).ok_or(err));
         // TODO
         p.offset = Offset::FromStart(4);
+        p.line += 1;
         Ok(())
     }
 
@@ -110,7 +112,6 @@ impl Buffer {
     }
 
     pub fn anchor_at(&self, anchor: Anchor, rel_x: i32, rel_y: i32) -> bool {
-        return true;
         self.anchors.get(&anchor.id).map_or(false, |p| (p.line as i32) == rel_y)
     }
 }
