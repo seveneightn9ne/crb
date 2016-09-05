@@ -21,9 +21,19 @@ impl<'a> Window<'a> {
     }
 
     pub fn title(&self) -> String {
-        match self.buf.file_path {
-            Some(ref thing) => thing.clone(),
-            None => "new file".to_string(),
-        }
+        let unsaved_prefix = match self.buf.unsaved {
+            true => "*".to_string(),
+            false => " ".to_string(),
+        };
+        let rest = match self.buf.file_path {
+            Some(ref thing) => {
+                match self.buf.newfile {
+                    true => thing.clone() + &" (new file)".to_string(),
+                    false => thing.clone(),
+                }
+            }
+            None => "empty buffer".to_string(),
+        };
+        unsaved_prefix + &rest
     }
 }

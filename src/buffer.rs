@@ -5,6 +5,8 @@ use std::io::Read;
 pub struct Buffer {
     pub contents: String,
     pub file_path: Option<String>,
+    pub unsaved: bool,
+    pub newfile: bool,
 }
 
 impl Buffer {
@@ -14,6 +16,8 @@ impl Buffer {
         Ok(Buffer {
             contents: try!(read_file(&path)),
             file_path: Some(path.to_string()),
+            unsaved: false,
+            newfile: false,
         })
     }
 
@@ -21,6 +25,8 @@ impl Buffer {
         Buffer {
             contents: "".to_string(),
             file_path: Some(path.to_string()),
+            unsaved: false,
+            newfile: true,
         }
     }
 
@@ -28,6 +34,8 @@ impl Buffer {
         Buffer {
             contents: "".to_string(),
             file_path: None,
+            unsaved: false,
+            newfile: true,
         }
     }
 
