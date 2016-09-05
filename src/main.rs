@@ -4,10 +4,12 @@ mod buffer;
 mod geometry;
 mod window;
 mod graphics;
+mod errors;
 
 use std::default::Default;
 use std::env;
 use std::error::Error;
+use std::sync::Mutex;
 
 use rustbox::RustBox;
 use rustbox::Key;
@@ -28,7 +30,7 @@ fn startup() -> Result<(), Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
-    let buf1 = match env::args().nth(1) {
+    let mut buf1 = match env::args().nth(1) {
         Some(path) => {
             match buffer::Buffer::load_from_file(&path) {
                 Ok(buffer) => buffer,
@@ -38,14 +40,14 @@ fn startup() -> Result<(), Box<Error>> {
         None => buffer::Buffer::empty(),
     };
 
+    let buf1 = Mutex::new(buf1);
+
     let width = rustbox.width() as i32;
     let height = rustbox.height() as i32;
 
-    let window1 = Window::new(&buf1, Point::new(0, 0), Size::new(width, height));
+    let mut window1 = Window::new(buf1, Point::new(0, 0), Size::new(width, height));
 
-    let mut cursor_y = 0;
     loop {
-        rustbox.set_cursor(0, cursor_y);
         graphics::render(&rustbox, &window1);
 
         rustbox.present();
@@ -56,12 +58,8 @@ fn startup() -> Result<(), Box<Error>> {
                     Key::Char('q') => {
                         break;
                     }
-                    Key::Char('j') => {
-                        cursor_y += 1;
-                    }
-                    Key::Char('k') => {
-                        cursor_y -= 1;
-                    }
+                    Key::Char('j') => window1.move_cursor_vert(1),
+                    Key::Char('k') => window1.move_cursor_vert(-1),
                     _ => {}
                 }
             }
