@@ -168,7 +168,20 @@ impl Buffer {
         let (before, after) = cur_line.split_at(pos.offset as usize);
         self.contents[pos.line as usize] =
             Line { text: before.to_string() + &text.to_string() + &after };
+        // TODO move anchors on this line
         pos.offset += 1;
+        self.anchors.insert(anchor.id, pos);
+        Ok(())
+    }
+
+    pub fn delete_at(&mut self, anchor: &Anchor) -> Result<(), CrbError> {
+        let err = CrbError::new("no such anchor");
+        let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let cur_line = self.contents[pos.line as usize].text.clone();
+        let (before, after) = cur_line.split_at(pos.offset as usize);
+        let before_argh: String = before.chars().take(before.len() - 1).collect();
+        self.contents[pos.line as usize] = Line { text: before_argh.to_string() + after };
+        pos.offset -= 1;
         self.anchors.insert(anchor.id, pos);
         Ok(())
     }

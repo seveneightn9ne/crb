@@ -15,6 +15,7 @@ pub enum Command {
     MoveDown(i32),
     Quit,
     Insert(char),
+    Delete,
     Unknown,
     ChangeMode(Mode),
 }
@@ -27,6 +28,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
             match key {
                 Key::Char(c) => Command::Insert(c),
                 Key::Esc => Command::ChangeMode(Mode::Normal),
+                Key::Backspace => Command::Delete,
                 _ => Command::Unknown,
             }
         }

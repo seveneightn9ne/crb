@@ -86,4 +86,11 @@ impl Window {
             buf.insert_text_before(anchor, c);
         }
     }
+
+    pub fn delete(&mut self) {
+        let mut buf = self.buf.lock().unwrap();
+        for anchor in self.cursors.iter() {
+            buf.delete_at(anchor);
+        }
+    }
 }
