@@ -5,50 +5,74 @@ use std::collections::HashMap;
 use logging;
 use mode::Command;
 use std::cmp;
-use std::str;
+use std::iter::FromIterator;
 
 use errors::CrbError;
 
-// Reference to a position.
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+// A reference to a position.
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Anchor {
-    id: usize,
+    id: i64,
 }
 
+#[derive(PartialEq, Eq)]
 pub struct Wrap {
     style: WrapStyle,
+    width: i32,
     // Whether the cursor moves between visual lines or buffer lines.
     vismove: bool,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum WrapStyle {
     Truncate,
-    // Width in characters
-    Hard(i32),
-    Word(i32),
+    Hard,
+    Word,
 }
 
+impl Wrap {
+    pub fn default(width: i32) -> Wrap {
+        Wrap {
+            style: WrapStyle::Truncate,
+            width: width,
+            vismove: false,
+        }
+    }
+}
+
+// Private structure containing position data.
 #[derive(Clone)]
 struct Position {
-    line: i32, // TODO make these usize
+    line: i32,
     // Offset from the beginning of the line.
+    // 0 is before the first character.
+    // len(line) is after the last character.
     offset: i32,
 }
 
-#[derive(Clone)]
-pub struct Line {
-    contents: String,
+#[derive(Debug)]
+pub struct Display {
+    pub x: i32,
+    pub y: i32,
+    pub symbol: Symbol,
+}
+
+#[derive(Debug)]
+pub enum Symbol {
+    Char(char),
+    Anchor(Anchor),
+    Void,
 }
 
 pub struct Buffer {
-    pub contents: Vec<Line>,
+    pub contents: String,
     pub file_path: Option<String>,
     pub unsaved: bool,
     pub newfile: bool,
 
     // Map from anchor id to position.
-    anchors: HashMap<usize, Position>,
-    next_anchor_id: usize,
+    anchors: HashMap<i64, Position>,
+    next_anchor_id: i64,
 }
 
 impl Buffer {
@@ -56,7 +80,7 @@ impl Buffer {
 
     pub fn load_from_file(path: &str) -> Result<Buffer, io::Error> {
         Ok(Buffer {
-            contents: split_lines(try!(read_file(&path))),
+            contents: try!(read_file(&path)),
             file_path: Some(path.to_string()),
             unsaved: false,
             newfile: false,
@@ -67,7 +91,7 @@ impl Buffer {
 
     pub fn new_file(path: &str) -> Buffer {
         Buffer {
-            contents: vec![Line { contents: "".to_string() }],
+            contents: "".to_string(),
             file_path: Some(path.to_string()),
             unsaved: false,
             newfile: true,
@@ -78,7 +102,7 @@ impl Buffer {
 
     pub fn empty() -> Buffer {
         Buffer {
-            contents: vec![Line { contents: "".to_string() }],
+            contents: "".to_string(),
             file_path: None,
             unsaved: false,
             newfile: true,
@@ -98,6 +122,7 @@ impl Buffer {
         self.anchors.insert(a.id, p);
         a
     }
+
     pub fn move_anchor(&mut self, anchor: Anchor, m: &Command) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
         let mut p2: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
@@ -120,32 +145,87 @@ impl Buffer {
         Ok(())
     }
 
-    fn new_anchor_id(&mut self) -> usize {
+    fn new_anchor_id(&mut self) -> i64 {
         self.next_anchor_id += 1;
         self.next_anchor_id - 1
-    }
-
-    pub fn insert_text_before_anchor(&mut self,
-                                     anchor: &Anchor,
-                                     text: char)
-                                     -> Result<(), CrbError> {
-        let err = CrbError::new("no such anchor");
-        let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
-        let cur_line = self.contents[pos.line as usize].contents.clone();
-        let (before, after) = cur_line.split_at(pos.offset as usize);
-        self.contents[pos.line as usize] =
-            Line { contents: before.to_string() + &text.to_string() + &after };
-        Ok(())
     }
 
     /** Observers **/
 
     pub fn line(&self, i: i32) -> &str {
-        &(self.contents[i as usize].contents) //TODO check if OOB
+        match self.contents.split('\n').nth(i as usize) {
+            Some(s) => s,
+            None => "",
+        }
     }
 
     pub fn count_lines(&self) -> i32 {
-        self.contents.len() as i32
+        self.contents.split('\n').count() as i32
+    }
+
+    pub fn display(&self, start_line: i32, height: i32, wrap: Wrap) -> Vec<Display> {
+        // TODO better overallocation number.
+        let mut v = Vec::with_capacity((height * wrap.width + 20) as usize);
+        if wrap != Wrap::default(wrap.width) {
+            panic!("TODO unsupported wrap");
+        }
+        // For each line.
+        for i in start_line..(start_line + height) {
+            let mut line = self.line(i).chars();
+            let mut charsleft = true;
+            let la = self.line_anchors(i);
+            let mut ancposes = la.iter();
+            let mut next_ancpos = ancposes.next();
+            // For each character.
+            for j in 0..wrap.width {
+                // Send anchor.
+                loop {
+                    if let Some(&(a_id, p)) = next_ancpos {
+                        if p.offset == j {
+                            v.push(Display {
+                                x: j,
+                                y: i,
+                                symbol: Symbol::Anchor(Anchor { id: *a_id }),
+                                // symbol: Symbol::Void,
+                            });
+                            next_ancpos = ancposes.next();
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                // TODO anchor off the end.
+
+                // Send character.
+                let mut s = Symbol::Void;
+                // TODO anchors
+                if charsleft {
+                    if let Some(c) = line.next() {
+                        s = Symbol::Char(c);
+                    } else {
+                        charsleft = false;
+                    }
+                }
+                v.push(Display {
+                    x: j,
+                    y: i,
+                    symbol: s,
+                });
+            }
+        }
+        v
+    }
+
+    fn line_anchors(&self, i: i32) -> Vec<(&i64, &Position)> {
+        self.anchors
+            .iter()
+            .filter_map(|id_p| match id_p.1.line == i {
+                true => Some(id_p),
+                false => None,
+            })
+            .collect()
     }
 
     pub fn anchor_at(&self, anchor: Anchor, x: i32, y: i32) -> bool {
@@ -155,10 +235,6 @@ impl Buffer {
             mx && my
         })
     }
-}
-
-fn split_lines(string: String) -> Vec<Line> {
-    string.split("\n").map(|s| Line { contents: s.to_string() }).collect::<Vec<Line>>()
 }
 
 fn read_file(path: &str) -> Result<String, io::Error> {

@@ -1,8 +1,10 @@
 use std::sync::Mutex;
+use logging;
+
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
 use mode::{Command, Mode};
-use logging;
+use buffer::{Display, Symbol, Wrap};
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
@@ -75,10 +77,15 @@ impl Window {
         }
     }
 
-    pub fn insert(&mut self, c: char) {
+    pub fn display(&self) -> Vec<Display> {
         let mut buf = self.buf.lock().unwrap();
-        for anchor in self.cursors.iter() {
-            buf.insert_text_before_anchor(anchor, c);
-        }
+        // TODO use real wrap
+        let wrap = Wrap::default(self.size.width);
+        let start_line = 0;
+        buf.display(start_line, self.size.height, wrap)
+    }
+
+    pub fn insert(&mut self, c: char) {
+        // TODO
     }
 }

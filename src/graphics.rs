@@ -3,6 +3,9 @@ use rustbox::{RustBox, Color};
 use logging;
 
 use window::Window;
+use buffer::{Display, Symbol};
+
+static mut frame: i64 = 0;
 
 pub fn render(rb: &RustBox, window: &Window) {
     // Write file name to top bar
@@ -12,7 +15,7 @@ pub fn render(rb: &RustBox, window: &Window) {
              Color::Black,
              Color::White,
              &window.title());
-    logging::debug("wrote topbar");
+
     // Write rest of top bar
     for i in (window.title().len() as i32)..window.size.width {
         rb.print((window.topleft.x + i) as usize,
@@ -23,26 +26,39 @@ pub fn render(rb: &RustBox, window: &Window) {
                  " ");
 
     }
-    logging::debug("wrote topbar 2");
     // Write buffer contents
-    for rel_y in 1..window.size.height {
-        let abs_y = window.topleft.y + rel_y;
-        for rel_x in 0..window.size.width {
-            let abs_x = window.topleft.x + rel_x;
-            logging::debug(&format!("position is {}, {}", rel_x, rel_y));
-
-            let cursor_at = window.cursor_at(rel_x, rel_y);
-            let ch = window.char_at(rel_x, rel_y).unwrap_or(' ');
-            let (fg, bg) = match cursor_at {
-                true => (Color::Black, Color::White),
-                false => (Color::White, Color::Black),
-            };
-            rb.print_char(abs_x as usize,
-                          abs_y as usize,
-                          rustbox::RB_NORMAL,
-                          fg,
-                          bg,
-                          ch);
+    let mut cursor_is_next = false;
+    for cell in window.display() {
+        match cell.symbol {
+            Symbol::Void => (),
+            Symbol::Char(c) => {
+                let (fg, bg) = match cursor_is_next {
+                    false => (Color::White, Color::Black),
+                    true => (Color::Black, Color::White),
+                };
+                rb.print_char((cell.x + window.topleft.x) as usize,
+                              (cell.y + window.topleft.y + 1) as usize,
+                              rustbox::RB_NORMAL,
+                              fg,
+                              bg,
+                              c);
+                cursor_is_next = false;
+            }
+            Symbol::Anchor(_) => {
+                // TODO check if the anchor is a cursor.
+                cursor_is_next = true;
+            }
         }
+    }
+
+    let framestr = unsafe { frame.to_string().clone() };
+    rb.print(20,
+             0,
+             rustbox::RB_NORMAL,
+             Color::Green,
+             Color::White,
+             &framestr);
+    unsafe {
+        frame += 1;
     }
 }
