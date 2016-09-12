@@ -48,6 +48,8 @@ struct Position {
     // 0 is before the first character.
     // len(line) is after the last character.
     offset: i32,
+    // The offset that this will snap back to when moving to a longer line.
+    wishful_offset: Option<i32>,
 }
 
 struct Line {
@@ -118,6 +120,7 @@ impl Buffer {
         let p = Position {
             line: 0,
             offset: 0,
+            wishful_offset: None,
         };
         self.anchors.insert(a.id, p);
         a
@@ -136,7 +139,15 @@ impl Buffer {
             Command::MoveDown(n) => {
                 p2.line = cmp::min(cmp::max(0, p2.line + n), self.count_lines());
                 let len = self.line(p2.line).unwrap_or("").chars().count() as i32;
-                p2.offset = cmp::min(p2.offset, len);
+                let wish = match p2.wishful_offset {
+                    None => p2.offset,
+                    Some(x) => x,
+                };
+                p2.offset = cmp::min(wish, len);
+                p2.wishful_offset = match p2.offset < wish {
+                    true => Some(wish),
+                    false => None,
+                };
                 p2
             }
             _ => return Err(CrbError::new("unsupported move command")),
