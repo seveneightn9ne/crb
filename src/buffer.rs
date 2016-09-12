@@ -182,6 +182,7 @@ impl Buffer {
         let before_argh: String = before.chars().take(before.len() - 1).collect();
         self.contents[pos.line as usize] = Line { text: before_argh.to_string() + after };
         pos.offset -= 1;
+        // TODO move anchors on this line
         self.anchors.insert(anchor.id, pos);
         Ok(())
     }

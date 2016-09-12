@@ -50,15 +50,4 @@ pub fn render(rb: &RustBox, window: &Window) {
             }
         }
     }
-
-    let framestr = unsafe { frame.to_string().clone() };
-    rb.print(20,
-             0,
-             rustbox::RB_NORMAL,
-             Color::Green,
-             Color::White,
-             &framestr);
-    unsafe {
-        frame += 1;
-    }
 }
