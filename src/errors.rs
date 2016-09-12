@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CrbError<'a> {
     description: &'a str,
 }
