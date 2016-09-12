@@ -50,6 +50,10 @@ struct Position {
     offset: i32,
 }
 
+struct Line {
+    text: String,
+}
+
 #[derive(Debug)]
 pub struct Display {
     pub x: i32,
@@ -65,7 +69,7 @@ pub enum Symbol {
 }
 
 pub struct Buffer {
-    pub contents: String,
+    contents: Vec<Line>,
     pub file_path: Option<String>,
     pub unsaved: bool,
     pub newfile: bool,
@@ -79,30 +83,26 @@ impl Buffer {
     /** Creators **/
 
     pub fn load_from_file(path: &str) -> Result<Buffer, io::Error> {
-        Ok(Buffer {
-            contents: try!(read_file(&path)),
-            file_path: Some(path.to_string()),
-            unsaved: false,
-            newfile: false,
-            anchors: HashMap::new(),
-            next_anchor_id: 0,
-        })
+        let s = try!(read_file(path));
+        let contents: Vec<Line> = s.split("\n")
+            .map(|x| Line { text: x.to_string() })
+            .collect();
+        let mut buf = Buffer::empty();
+        buf.contents = contents;
+        buf.file_path = Some(path.to_string());
+        buf.newfile;
+        Ok(buf)
     }
 
     pub fn new_file(path: &str) -> Buffer {
-        Buffer {
-            contents: "".to_string(),
-            file_path: Some(path.to_string()),
-            unsaved: false,
-            newfile: true,
-            anchors: HashMap::new(),
-            next_anchor_id: 0,
-        }
+        let mut buf = Buffer::empty();
+        buf.file_path = Some(path.to_string());
+        buf
     }
 
     pub fn empty() -> Buffer {
         Buffer {
-            contents: "".to_string(),
+            contents: Vec::new(),
             file_path: None,
             unsaved: false,
             newfile: true,
@@ -129,13 +129,13 @@ impl Buffer {
         let m = canonicalize_move(m);
         let p3: Position = match m {
             Command::MoveRight(n) => {
-                let len = self.line(p2.line).chars().count() as i32;
+                let len = self.line(p2.line).unwrap_or("").chars().count() as i32;
                 p2.offset = cmp::min(cmp::max(0, p2.offset + n), len);
                 p2
             }
             Command::MoveDown(n) => {
                 p2.line = cmp::min(cmp::max(0, p2.line + n), self.count_lines());
-                let len = self.line(p2.line).chars().count() as i32;
+                let len = self.line(p2.line).unwrap_or("").chars().count() as i32;
                 p2.offset = cmp::min(p2.offset, len);
                 p2
             }
@@ -152,15 +152,12 @@ impl Buffer {
 
     /** Observers **/
 
-    pub fn line(&self, i: i32) -> &str {
-        match self.contents.split('\n').nth(i as usize) {
-            Some(s) => s,
-            None => "",
-        }
+    pub fn line(&self, i: i32) -> Option<&str> {
+        self.contents.get(i as usize).map(|l| l.text.as_str())
     }
 
     pub fn count_lines(&self) -> i32 {
-        self.contents.split('\n').count() as i32
+        self.contents.len() as i32
     }
 
     pub fn display(&self, start_line: i32, height: i32, wrap: Wrap) -> Vec<Display> {
@@ -170,8 +167,14 @@ impl Buffer {
             panic!("TODO unsupported wrap");
         }
         // For each line.
-        for i in start_line..(start_line + height) {
-            let mut line = self.line(i).chars();
+        let it = self.contents
+            .iter()
+            .skip(start_line as usize)
+            .take(height as usize)
+            .enumerate();
+        for (i, line) in it {
+            let i = i as i32;
+            let mut linetext = line.text.chars();
             let mut charsleft = true;
             let la = self.line_anchors(i);
             let mut ancposes = la.iter();
@@ -202,7 +205,7 @@ impl Buffer {
                 let mut s = Symbol::Void;
                 // TODO anchors
                 if charsleft {
-                    if let Some(c) = line.next() {
+                    if let Some(c) = linetext.next() {
                         s = Symbol::Char(c);
                     } else {
                         charsleft = false;

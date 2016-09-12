@@ -31,10 +31,11 @@ impl Window {
         }
     }
 
-    pub fn line(&self, i: i32) -> String {
-        let mut buf = self.buf.lock().unwrap();
-        buf.line(i).to_string()
-    }
+    // pub fn line(&self, i: i32) -> &str {
+    //     let mut buf = self.buf.lock().unwrap();
+    //     let s = buf.line(i).map_or("", |s| s.to_owned());
+    //     s
+    // }
 
     pub fn title(&self) -> String {
         let mut buf = self.buf.lock().unwrap();
@@ -52,12 +53,6 @@ impl Window {
             None => "empty buffer".to_string(),
         };
         unsaved_prefix + &rest
-    }
-
-    pub fn char_at(&self, rel_x: i32, rel_y: i32) -> Option<char> {
-        let mut buf = self.buf.lock().unwrap();
-        // Subtract one for the top bar.
-        buf.line(rel_y - 1).chars().skip((rel_x) as usize).next()
     }
 
     pub fn cursor_at(&self, rel_x: i32, rel_y: i32) -> bool {
