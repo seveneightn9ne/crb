@@ -161,6 +161,19 @@ impl Buffer {
         self.next_anchor_id - 1
     }
 
+    pub fn insert_text_before(&mut self, anchor: &Anchor, text: char) -> Result<(), CrbError> {
+        let err = CrbError::new("no such anchor");
+        let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let cur_line = self.contents[pos.line as usize].text.clone();
+        let (before, after) = cur_line.split_at(pos.offset as usize);
+        self.contents[pos.line as usize] =
+            Line { text: before.to_string() + &text.to_string() + &after };
+        pos.offset += 1;
+        self.anchors.insert(anchor.id, pos);
+        Ok(())
+    }
+
+    /** Observers **/
     /** Observers **/
 
     pub fn line(&self, i: i32) -> Option<&str> {

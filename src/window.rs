@@ -81,6 +81,9 @@ impl Window {
     }
 
     pub fn insert(&mut self, c: char) {
-        // TODO
+        let mut buf = self.buf.lock().unwrap();
+        for anchor in self.cursors.iter() {
+            buf.insert_text_before(anchor, c);
+        }
     }
 }
