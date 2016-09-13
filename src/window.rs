@@ -4,7 +4,7 @@ use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
 use mode::{Command, Mode};
 use buffer::{Display, Wrap};
-use errors::{CrbResult};
+use errors::CrbResult;
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
@@ -63,12 +63,14 @@ impl Window {
         Ok(())
     }
 
-    pub fn display(&self) -> Vec<Display> {
+    pub fn display<F>(&self, f: F)
+        where F: FnMut(&Display)
+    {
         let buf = self.buf.lock().unwrap();
         // TODO use real wrap
         let wrap = Wrap::default(self.size.width);
         let start_line = 0;
-        buf.display(start_line, self.size.height, wrap)
+        buf.display(start_line, self.size, wrap, f);
     }
 
     pub fn insert(&mut self, c: char) -> CrbResult<()> {

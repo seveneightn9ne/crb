@@ -2,7 +2,7 @@ use rustbox;
 use rustbox::{RustBox, Color};
 
 use window::Window;
-use buffer::{Symbol};
+use buffer::Symbol;
 
 pub fn render(rb: &RustBox, window: &Window) {
     // Write file name to top bar
@@ -25,7 +25,7 @@ pub fn render(rb: &RustBox, window: &Window) {
     }
     // Write buffer contents
     let mut cursor_is_next = false;
-    for cell in window.display() {
+    window.display(|cell| {
         match cell.symbol {
             Symbol::Void => (),
             Symbol::Char(c) => {
@@ -46,5 +46,5 @@ pub fn render(rb: &RustBox, window: &Window) {
                 cursor_is_next = true;
             }
         }
-    }
+    });
 }

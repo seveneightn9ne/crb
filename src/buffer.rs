@@ -4,10 +4,13 @@ use std::io::Read;
 use std::collections::HashMap;
 use mode::Command;
 use std::cmp;
+use std::cmp::Ordering;
+use std;
 
+use geometry;
 use errors::CrbError;
 
-// A reference to a position.
+/// A reference to a position.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Anchor {
     id: i64,
@@ -17,7 +20,7 @@ pub struct Anchor {
 pub struct Wrap {
     style: WrapStyle,
     width: i32,
-    // Whether the cursor moves between visual lines or buffer lines.
+    /// Whether the cursor moves between visual lines or buffer lines.
     vismove: bool,
 }
 
@@ -39,16 +42,30 @@ impl Wrap {
     }
 }
 
-// Private structure containing position data.
-#[derive(Clone)]
+/// Private structure containing position data.
+#[derive(Clone, PartialOrd)]
 struct Position {
     line: i32,
-    // Offset from the beginning of the line.
-    // 0 is before the first character.
-    // len(line) is after the last character.
+    /// Offset from the beginning of the line.
+    /// 0 is before the first character.
+    /// len(line) is after the last character.
     offset: i32,
-    // The offset that this will snap back to when moving to a longer line.
+    /// The offset that this will snap back to when moving to a longer line.
     wishful_offset: Option<i32>,
+}
+
+impl PartialEq for Position {
+    fn eq(&self, other: &Self) -> bool {
+        (self.line, self.offset) == (other.line, other.offset)
+    }
+}
+
+impl Eq for Position {}
+
+impl Ord for Position {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.line, self.offset).cmp(&(other.line, other.offset))
+    }
 }
 
 struct Line {
@@ -187,7 +204,6 @@ impl Buffer {
     }
 
     /** Observers **/
-    /** Observers **/
 
     pub fn line(&self, i: i32) -> Option<&str> {
         self.contents.get(i as usize).map(|l| l.text.as_str())
@@ -197,75 +213,83 @@ impl Buffer {
         self.contents.len() as i32
     }
 
-    pub fn display(&self, start_line: i32, height: i32, wrap: Wrap) -> Vec<Display> {
-        // TODO better overallocation number.
-        let mut v = Vec::with_capacity((height * wrap.width + 20) as usize);
+    /// Calls the closure in scan order on the rectangular area.
+    pub fn display<F>(&self, start_line: i32, size: geometry::Size, wrap: Wrap, mut f: F)
+        where F: FnMut(&Display)
+    {
         if wrap != Wrap::default(wrap.width) {
             panic!("TODO unsupported wrap");
         }
-        // For each line.
-        let it = self.contents
-            .iter()
-            .skip(start_line as usize)
-            .take(height as usize)
-            .enumerate();
-        for (i, line) in it {
-            let i = i as i32;
-            let mut linetext = line.text.chars();
-            let mut charsleft = true;
-            let la = self.line_anchors(i);
-            let mut ancposes = la.iter();
-            let mut next_ancpos = ancposes.next();
-            // For each character.
-            for j in 0..wrap.width {
-                // Send anchor.
-                loop {
-                    if let Some(&(a_id, p)) = next_ancpos {
-                        if p.offset == j {
-                            v.push(Display {
-                                x: j,
-                                y: i,
-                                symbol: Symbol::Anchor(Anchor { id: *a_id }),
-                                // symbol: Symbol::Void,
-                            });
-                            next_ancpos = ancposes.next();
-                        } else {
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-                // TODO anchor off the end.
 
-                // Send character.
-                let mut s = Symbol::Void;
-                // TODO anchors
-                if charsleft {
-                    if let Some(c) = linetext.next() {
-                        s = Symbol::Char(c);
-                    } else {
-                        charsleft = false;
+        // TODO horizontal scrolling
+        // TODO multi-width characters
+
+        let mut buf_y = start_line as usize;
+        let mut buf_x = 0 as usize;
+        let mut lines = self.contents.iter().skip(buf_y);
+        let mut line_chars = to_chars(lines.next()).peekable();
+        // TODO enable anchors
+        // let mut line_anchors = self.line_anchors(buf_y).iter().peekable();
+        let anchors_all = self.all_anchors();
+        let mut anchors_iter = anchors_all.iter().peekable();
+
+        for view_y in 0..size.height {
+            for view_x in 0..size.width {
+                let mut did_anchor = false;
+                if let Some(tpl) = anchors_iter.peek() {
+                    let tpl: &(&i64, &Position) = tpl;
+                    // let (anchor_id, pos): &(&i64, &Position) = tpl;
+                    let anchor_id: &i64 = tpl.0;
+                    let pos: &Position = tpl.1;
+                    if (pos.line as usize == buf_y) && (pos.offset as usize == buf_x) {
+                        let a = Anchor { id: anchor_id + 0 };
+                        let d = Display {
+                            x: view_x,
+                            y: view_y,
+                            symbol: Symbol::Anchor(a),
+                        };
+                        f(&d);
+                        did_anchor = true;
                     }
                 }
-                v.push(Display {
-                    x: j,
-                    y: i,
+                if did_anchor {
+                    anchors_iter.next();
+                }
+
+                let s = match line_chars.next() {
+                    Some(c) => Symbol::Char(c),
+                    None => Symbol::Void,
+                };
+                let d = Display {
+                    x: view_x,
+                    y: view_y,
                     symbol: s,
-                });
+                };
+                f(&d);
+                buf_x += 1;
+            }
+            if line_chars.peek().is_none() {
+                // Next buf line
+                buf_y += 1;
+                buf_x = 0;
+                line_chars = to_chars(lines.next()).peekable();
+                // line_anchors = self.line_anchors(buf_y).iter().peekable();
             }
         }
-        v
     }
 
-    fn line_anchors(&self, i: i32) -> Vec<(&i64, &Position)> {
-        self.anchors
-            .iter()
-            .filter_map(|id_p| match id_p.1.line == i {
-                true => Some(id_p),
-                false => None,
-            })
-            .collect()
+    fn all_anchors(&self) -> Vec<(&i64, &Position)> {
+        let mut ans: Vec<(&i64, &Position)> = self.anchors.iter().collect();
+        ans.sort_by_key(|x| x.1);
+        ans
+    }
+}
+
+
+fn to_chars(oli: Option<&Line>) -> std::str::Chars {
+    match oli {
+        Some(y) => y.text.chars(),
+        None => "".chars(),
     }
 }
 

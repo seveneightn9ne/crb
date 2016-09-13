@@ -6,3 +6,8 @@ all:
 
 clean:
 	cargo clean
+
+meep:
+	clear
+	make
+	cargo run src/main.rs

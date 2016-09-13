@@ -69,7 +69,7 @@ fn startup() -> Result<(), Box<Error>> {
                         window1.mode = m;
                         Ok(())
                     }
-                    _ => Ok(()) //TODO show this somewhere
+                    _ => Ok(()), //TODO show this somewhere
                 };
             }
             Err(e) => panic!("{}", e),
