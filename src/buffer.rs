@@ -2,10 +2,8 @@ use std::fs;
 use std::io;
 use std::io::Read;
 use std::collections::HashMap;
-use logging;
 use mode::Command;
 use std::cmp;
-use std::iter::FromIterator;
 
 use errors::CrbError;
 
@@ -24,6 +22,7 @@ pub struct Wrap {
 }
 
 #[derive(PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum WrapStyle {
     Truncate,
     Hard,
@@ -126,7 +125,7 @@ impl Buffer {
         a
     }
 
-    pub fn move_anchor(&mut self, anchor: Anchor, m: &Command) -> Result<(), CrbError> {
+    pub fn move_anchor(&mut self, anchor: &Anchor, m: &Command) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
         let mut p2: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
         let m = canonicalize_move(m);
@@ -267,14 +266,6 @@ impl Buffer {
                 false => None,
             })
             .collect()
-    }
-
-    pub fn anchor_at(&self, anchor: Anchor, x: i32, y: i32) -> bool {
-        self.anchors.get(&anchor.id).map_or(false, |p| {
-            let mx = (p.line as i32) == y;
-            let my = (p.offset as i32) == x;
-            mx && my
-        })
     }
 }
 

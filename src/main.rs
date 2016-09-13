@@ -14,7 +14,6 @@ use std::error::Error;
 use std::sync::Mutex;
 
 use rustbox::RustBox;
-use rustbox::Key;
 
 use window::Window;
 use geometry::{Point, Size};
@@ -33,7 +32,7 @@ fn startup() -> Result<(), Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
-    let mut buf1 = match env::args().nth(1) {
+    let buf1 = match env::args().nth(1) {
         Some(path) => {
             match buffer::Buffer::load_from_file(&path) {
                 Ok(buffer) => buffer,
@@ -58,7 +57,7 @@ fn startup() -> Result<(), Box<Error>> {
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 let cmd = mode::map(window1.mode.clone(), key);
-                match cmd {
+                let _ = match cmd {
                     mode::Command::Quit => break,
                     mode::Command::MoveUp(_) => window1.move_cursors(&cmd),
                     mode::Command::MoveDown(_) => window1.move_cursors(&cmd),
@@ -66,9 +65,12 @@ fn startup() -> Result<(), Box<Error>> {
                     mode::Command::MoveRight(_) => window1.move_cursors(&cmd),
                     mode::Command::Insert(c) => window1.insert(c),
                     mode::Command::Delete => window1.delete(),
-                    mode::Command::ChangeMode(m) => window1.mode = m,
-                    _ => {}//TODO show this somewhere
-                }
+                    mode::Command::ChangeMode(m) => {
+                        window1.mode = m;
+                        Ok(())
+                    }
+                    _ => Ok(()) //TODO show this somewhere
+                };
             }
             Err(e) => panic!("{}", e),
             _ => {}

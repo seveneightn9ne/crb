@@ -1,11 +1,8 @@
 use rustbox;
 use rustbox::{RustBox, Color};
-use logging;
 
 use window::Window;
-use buffer::{Display, Symbol};
-
-static mut frame: i64 = 0;
+use buffer::{Symbol};
 
 pub fn render(rb: &RustBox, window: &Window) {
     // Write file name to top bar

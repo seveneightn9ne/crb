@@ -1,10 +1,10 @@
 use std::sync::Mutex;
-use logging;
 
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
 use mode::{Command, Mode};
-use buffer::{Display, Symbol, Wrap};
+use buffer::{Display, Wrap};
+use errors::{CrbResult};
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
@@ -38,7 +38,7 @@ impl Window {
     // }
 
     pub fn title(&self) -> String {
-        let mut buf = self.buf.lock().unwrap();
+        let buf = self.buf.lock().unwrap();
         let unsaved_prefix = match buf.unsaved {
             true => "*".to_string(),
             false => " ".to_string(),
@@ -55,42 +55,35 @@ impl Window {
         unsaved_prefix + &rest
     }
 
-    pub fn cursor_at(&self, rel_x: i32, rel_y: i32) -> bool {
+    pub fn move_cursors(&mut self, m: &Command) -> CrbResult<()> {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {
-            if buf.anchor_at(*anchor, rel_x, rel_y - 1) {
-                return true;
-            }
+            try!(buf.move_anchor(anchor, m));
         }
-        false
-    }
-
-    pub fn move_cursors(&mut self, m: &Command) {
-        let mut buf = self.buf.lock().unwrap();
-        for anchor in self.cursors.iter() {
-            buf.move_anchor(*anchor, m);
-        }
+        Ok(())
     }
 
     pub fn display(&self) -> Vec<Display> {
-        let mut buf = self.buf.lock().unwrap();
+        let buf = self.buf.lock().unwrap();
         // TODO use real wrap
         let wrap = Wrap::default(self.size.width);
         let start_line = 0;
         buf.display(start_line, self.size.height, wrap)
     }
 
-    pub fn insert(&mut self, c: char) {
+    pub fn insert(&mut self, c: char) -> CrbResult<()> {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {
-            buf.insert_text_before(anchor, c);
+            try!(buf.insert_text_before(anchor, c));
         }
+        Ok(())
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&mut self) -> CrbResult<()> {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {
-            buf.delete_at(anchor);
+            try!(buf.delete_at(anchor));
         }
+        Ok(())
     }
 }

@@ -2,28 +2,26 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Debug)]
-pub struct CrbError<'a> {
-    description: &'a str,
+pub struct CrbError {
+    description: String,
 }
 
-impl<'a> fmt::Display for CrbError<'a> {
+pub type CrbResult<T> = Result<T, CrbError>;
+
+impl fmt::Display for CrbError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Crb error: {}", self.description)
     }
 }
 
-impl<'a> CrbError<'a> {
+impl CrbError {
     pub fn new(description: &str) -> CrbError {
-        CrbError { description: description }
+        CrbError { description: description.to_string() }
     }
 }
 
-impl<'a> Error for CrbError<'a> {
+impl Error for CrbError {
     fn description(&self) -> &str {
-        self.description
+        &self.description
     }
-
-    // fn cause(self) -> Option<& Error> {
-    //     None
-    // }
 }
