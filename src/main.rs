@@ -67,6 +67,7 @@ fn startup() -> Result<(), Box<Error>> {
                     mode::Command::MoveRight(_) => window1.move_cursors(&cmd),
                     mode::Command::Insert(c) => window1.insert(c),
                     mode::Command::Delete => window1.delete(),
+                    mode::Command::NewLine => window1.insert('\n'),
                     mode::Command::ChangeMode(m) => {
                         window1.mode = m;
                         Ok(())

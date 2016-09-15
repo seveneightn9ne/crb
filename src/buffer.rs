@@ -53,7 +53,15 @@ struct Position {
     /// The offset that this will snap back to when moving to a longer line.
     wishful_offset: Option<i32>,
 }
-
+impl Position {
+    fn new(line: i32, offset: i32) -> Position {
+        Position{
+            line: line,
+            offset: offset,
+            wishful_offset: None,
+        }
+    }
+}
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
         (self.line, self.offset) == (other.line, other.offset)
@@ -180,15 +188,20 @@ impl Buffer {
 
     pub fn insert_text_before(&mut self, anchor: &Anchor, text: char) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
-        let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
         let cur_line = self.contents[pos.line as usize].text.clone();
         let (before, after) = cur_line.split_at(pos.offset as usize);
-        self.contents[pos.line as usize] =
-            Line { text: before.to_string() + &text.to_string() + &after };
-        // TODO move anchors on this line
-        pos.offset += 1;
-        self.anchors.insert(anchor.id, pos);
-        Ok(())
+        if text == '\n' {
+            self.contents[pos.line as usize] = Line { text: before.to_string() };
+            self.contents.insert((pos.line + 1) as usize, Line { text: after.to_string() });
+            self.anchors.insert(anchor.id, Position::new(pos.line + 1, 0));
+            Ok(())
+        } else {
+            self.contents[pos.line as usize] =
+                Line { text: before.to_string() + &text.to_string() + &after };
+            // TODO move anchors on this line
+            self.move_anchor(anchor, &Command::MoveRight(1))
+        }
     }
 
     pub fn delete_at(&mut self, anchor: &Anchor) -> Result<(), CrbError> {

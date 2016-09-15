@@ -16,6 +16,7 @@ pub enum Command {
     Quit,
     Insert(char),
     Delete,
+    NewLine,
     Unknown,
     ChangeMode(Mode),
     RecompileSelf,
@@ -30,6 +31,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Char(c) => Command::Insert(c),
                 Key::Esc => Command::ChangeMode(Mode::Normal),
                 Key::Backspace => Command::Delete,
+                Key::Enter => Command::NewLine,
                 _ => Command::Unknown,
             }
         }
