@@ -39,6 +39,10 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Char('k') => Command::MoveUp(1),
                 Key::Char('h') => Command::MoveLeft(1),
                 Key::Char('l') => Command::MoveRight(1),
+                Key::Down => Command::MoveDown(1),
+                Key::Up => Command::MoveUp(1),
+                Key::Left => Command::MoveLeft(1),
+                Key::Right => Command::MoveRight(1),
                 Key::Char('i') => Command::ChangeMode(Mode::Insert),
                 _ => Command::Unknown,
             }
