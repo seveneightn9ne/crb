@@ -75,6 +75,7 @@ fn startup() -> Result<(), Box<Error>> {
                     mode::Command::RecompileSelf => {
                         hacks::recompile().and_then(|_| hacks::restart())
                     }
+                    mode::Command::Save => window1.save(),
                     _ => Ok(()), //TODO show this somewhere
                 };
                 if let Err(e) = res {

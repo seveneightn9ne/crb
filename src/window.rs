@@ -31,6 +31,11 @@ impl Window {
         }
     }
 
+    pub fn save(&mut self) -> CrbResult<()> {
+        let mut buf = self.buf.lock().unwrap();
+        buf.save()
+    }
+
     // pub fn line(&self, i: i32) -> &str {
     //     let mut buf = self.buf.lock().unwrap();
     //     let s = buf.line(i).map_or("", |s| s.to_owned());

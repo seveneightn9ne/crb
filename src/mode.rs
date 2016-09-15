@@ -20,6 +20,7 @@ pub enum Command {
     Unknown,
     ChangeMode(Mode),
     RecompileSelf,
+    Save,
 }
 
 type ModeMap = HashMap<Key, Command>;
@@ -48,6 +49,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Right => Command::MoveRight(1),
                 Key::Char('i') => Command::ChangeMode(Mode::Insert),
                 Key::Char('r') => Command::RecompileSelf,
+                Key::Char(' ') => Command::Save,
                 _ => Command::Unknown,
             }
         }

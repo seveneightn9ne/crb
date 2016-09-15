@@ -1,6 +1,6 @@
 use std::fs;
 use std::io;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::collections::HashMap;
 use mode::Command;
 use std::cmp;
@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 use std;
 
 use geometry;
-use errors::CrbError;
+use errors::{CrbError, CrbResult};
 
 /// A reference to a position.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -138,6 +138,24 @@ impl Buffer {
     }
 
     /** Mutators **/
+
+    pub fn save(&mut self) -> CrbResult<()> {
+        // TODO keep track of whether changed
+        if let Some(ref file_path) = self.file_path {
+            let f = try!(fs::File::create(file_path)
+                .map_err(|e| CrbError::new(&format!("error while opening to save {}", e))));
+            let mut w = io::BufWriter::new(f);
+            for line in &self.contents {
+                try!(w.write_all(line.text.as_bytes())
+                    .map_err(|e| CrbError::new(&format!("error while saving {}", e))));
+                try!(w.write_all(b"\n")
+                    .map_err(|e| CrbError::new(&format!("error while saving {}", e))));
+            }
+            Ok(())
+        } else {
+            return Err(CrbError::new("cannot save with no file path"));
+        }
+    }
 
     pub fn new_anchor(&mut self) -> Anchor {
         let a = Anchor { id: self.new_anchor_id() };
