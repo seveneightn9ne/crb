@@ -2,6 +2,7 @@
 name = "crb"
 version = "0.1.0"
 dependencies = [
+ "duct 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustbox 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -9,6 +10,20 @@ dependencies = [
 name = "bitflags"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "crossbeam"
+version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "duct"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "crossbeam 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "gag"

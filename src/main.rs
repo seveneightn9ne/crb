@@ -1,4 +1,5 @@
 extern crate rustbox;
+extern crate duct;
 
 mod buffer;
 mod geometry;
@@ -7,6 +8,7 @@ mod graphics;
 mod errors;
 mod logging;
 mod mode;
+mod hacks;
 
 use std::default::Default;
 use std::env;
@@ -19,7 +21,7 @@ use window::Window;
 use geometry::{Point, Size};
 
 fn main() {
-    logging::debug("Startup");
+    logging::debug("started");
     match startup() {
         Ok(_) => {}
         Err(e) => println!("Fatal error: {}", e),
@@ -57,7 +59,7 @@ fn startup() -> Result<(), Box<Error>> {
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 let cmd = mode::map(window1.mode.clone(), key);
-                let _ = match cmd {
+                let res = match cmd {
                     mode::Command::Quit => break,
                     mode::Command::MoveUp(_) => window1.move_cursors(&cmd),
                     mode::Command::MoveDown(_) => window1.move_cursors(&cmd),
@@ -69,9 +71,16 @@ fn startup() -> Result<(), Box<Error>> {
                         window1.mode = m;
                         Ok(())
                     }
+                    mode::Command::RecompileSelf => {
+                        hacks::recompile().and_then(|_| hacks::restart())
+                    }
                     _ => Ok(()), //TODO show this somewhere
                 };
+                if let Err(e) = res {
+                    logging::debug(&format!("cmd error: {}", e));
+                }
             }
+            // TODO don't panic...
             Err(e) => panic!("{}", e),
             _ => {}
         }

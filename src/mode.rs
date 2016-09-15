@@ -18,6 +18,7 @@ pub enum Command {
     Delete,
     Unknown,
     ChangeMode(Mode),
+    RecompileSelf,
 }
 
 type ModeMap = HashMap<Key, Command>;
@@ -44,6 +45,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Left => Command::MoveLeft(1),
                 Key::Right => Command::MoveRight(1),
                 Key::Char('i') => Command::ChangeMode(Mode::Insert),
+                Key::Char('r') => Command::RecompileSelf,
                 _ => Command::Unknown,
             }
         }
