@@ -228,8 +228,6 @@ impl Buffer {
         let mut buf_x = 0 as usize;
         let mut lines = self.contents.iter().skip(buf_y);
         let mut line_chars = to_chars(lines.next()).peekable();
-        // TODO enable anchors
-        // let mut line_anchors = self.line_anchors(buf_y).iter().peekable();
         let anchors_all = self.all_anchors();
         let mut anchors_iter = anchors_all.iter().peekable();
 
@@ -238,7 +236,6 @@ impl Buffer {
                 let mut did_anchor = false;
                 if let Some(tpl) = anchors_iter.peek() {
                     let tpl: &(&i64, &Position) = tpl;
-                    // let (anchor_id, pos): &(&i64, &Position) = tpl;
                     let anchor_id: &i64 = tpl.0;
                     let pos: &Position = tpl.1;
                     if (pos.line as usize == buf_y) && (pos.offset as usize == buf_x) {
@@ -273,7 +270,6 @@ impl Buffer {
                 buf_y += 1;
                 buf_x = 0;
                 line_chars = to_chars(lines.next()).peekable();
-                // line_anchors = self.line_anchors(buf_y).iter().peekable();
             }
         }
     }
