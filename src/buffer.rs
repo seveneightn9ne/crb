@@ -150,6 +150,7 @@ impl Buffer {
             Command::MoveRight(n) => {
                 let len = self.line(p2.line).unwrap_or("").chars().count() as i32;
                 p2.offset = cmp::min(cmp::max(0, p2.offset + n), len);
+                p2.wishful_offset = None;
                 p2
             }
             Command::MoveDown(n) => {
