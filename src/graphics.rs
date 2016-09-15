@@ -26,19 +26,23 @@ pub fn render(rb: &RustBox, window: &Window) {
     // Write buffer contents
     let mut cursor_is_next = false;
     window.display(|cell| {
+        let one_for_the_bar = 1;
+        let y = (cell.y + window.topleft.y + one_for_the_bar) as usize;
+        let x = (cell.x + window.topleft.x) as usize;
+        let sty = rustbox::RB_NORMAL;
+        let white = Color::White;
+        let black = Color::Black;
+        let (fg, bg) = match cursor_is_next {
+            false => (white, black),
+            true => (black, white),
+        };
         match cell.symbol {
-            Symbol::Void => (),
+            Symbol::Void => {
+                rb.print_char(x, y, sty, fg, bg, ' ');
+                cursor_is_next = false;
+            }
             Symbol::Char(c) => {
-                let (fg, bg) = match cursor_is_next {
-                    false => (Color::White, Color::Black),
-                    true => (Color::Black, Color::White),
-                };
-                rb.print_char((cell.x + window.topleft.x) as usize,
-                              (cell.y + window.topleft.y + 1) as usize,
-                              rustbox::RB_NORMAL,
-                              fg,
-                              bg,
-                              c);
+                rb.print_char(x, y, sty, fg, bg, c);
                 cursor_is_next = false;
             }
             Symbol::Anchor(_) => {
