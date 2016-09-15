@@ -55,7 +55,7 @@ struct Position {
 }
 impl Position {
     fn new(line: i32, offset: i32) -> Position {
-        Position{
+        Position {
             line: line,
             offset: offset,
             wishful_offset: None,
@@ -208,13 +208,24 @@ impl Buffer {
         let err = CrbError::new("no such anchor");
         let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
         let cur_line = self.contents[pos.line as usize].text.clone();
-        let (before, after) = cur_line.split_at(pos.offset as usize);
-        let before_argh: String = before.chars().take(before.len() - 1).collect();
-        self.contents[pos.line as usize] = Line { text: before_argh.to_string() + after };
-        pos.offset -= 1;
-        // TODO move anchors on this line
-        self.anchors.insert(anchor.id, pos);
-        Ok(())
+        if pos.offset == 0 && pos.line == 0 {
+            Ok(())
+        } else if pos.offset == 0 {
+            let old_text = self.contents[(pos.line - 1) as usize].text.clone();
+            self.contents[(pos.line - 1) as usize] = Line { text: old_text.clone() + &cur_line };
+            self.anchors.insert(anchor.id,
+                                Position::new(pos.line - 1, old_text.chars().count() as i32));
+            self.contents.remove(pos.line as usize);
+            Ok(())
+        } else {
+            let (before, after) = cur_line.split_at(pos.offset as usize);
+            let before_argh: String = before.chars().take(before.len() - 1).collect();
+            self.contents[pos.line as usize] = Line { text: before_argh.to_string() + after };
+            pos.offset -= 1;
+            // TODO move anchors on this line
+            self.anchors.insert(anchor.id, pos);
+            Ok(())
+        }
     }
 
     /** Observers **/
