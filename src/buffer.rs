@@ -108,7 +108,7 @@ impl Buffer {
         let mut buf = Buffer::empty();
         buf.contents = contents;
         buf.file_path = Some(path.to_string());
-        buf.newfile;
+        buf.newfile = false;
         Ok(buf)
     }
 
