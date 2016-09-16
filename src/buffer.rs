@@ -275,7 +275,29 @@ impl Buffer {
         let mut anchors_iter = anchors_all.iter().peekable();
 
         for view_y in 0..size.height {
-            for view_x in 0..size.width {
+            let mut view_x = 0;
+            // Draw line numbers
+            if buf_y <= self.contents.len() {
+                let col_size = self.contents.len().to_string().chars().count();
+                let line_num_str = (buf_y+1).to_string();
+                let mut line_num_chars = line_num_str.chars();
+                let offset = col_size - line_num_chars.clone().count();
+                if offset < 0 {panic!("Negative line number offset");}
+                for i in 0..col_size {
+                    if offset <= i {
+                        let d = Display {
+                            x: view_x,
+                            y: view_y,
+                            symbol: Symbol::Char(line_num_chars.next().unwrap()),
+                        };
+                        f(&d);
+                    }
+                    view_x += 1;
+                }
+            }
+
+
+            for view_x in (view_x+1)..size.width {
                 let mut did_anchor = false;
                 if let Some(tpl) = anchors_iter.peek() {
                     let tpl: &(&i64, &Position) = tpl;
