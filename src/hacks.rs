@@ -16,6 +16,7 @@ pub fn recompile() -> CrbResult<()> {
     }
 }
 
+#[allow(dead_code)]
 pub fn restart() -> CrbResult<()> {
     let e = Command::new("cargo").arg("run").arg("src/main.rs").exec();
     Err(CrbError::new(&format!("Error restarting: {:?}", e)))

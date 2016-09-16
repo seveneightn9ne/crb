@@ -22,13 +22,18 @@ use geometry::{Point, Size};
 
 fn main() {
     logging::debug("started");
-    match startup() {
-        Ok(_) => {}
-        Err(e) => println!("Fatal error: {}", e),
+
+    // Restart loop.
+    loop {
+        match startup() {
+            Ok(true) => {}
+            Ok(false) => break,
+            Err(e) => println!("Fatal error: {}", e),
+        }
     }
 }
 
-fn startup() -> Result<(), Box<Error>> {
+fn startup() -> Result<bool, Box<Error>> {
     let rustbox = match RustBox::init(Default::default()) {
         Result::Ok(v) => v,
         Result::Err(e) => return Err(Box::new(e)),
@@ -73,7 +78,11 @@ fn startup() -> Result<(), Box<Error>> {
                         Ok(())
                     }
                     mode::Command::RecompileSelf => {
-                        hacks::recompile().and_then(|_| hacks::restart())
+                        let r = hacks::recompile();
+                        if r.is_ok() {
+                            return Ok(true);
+                        }
+                        r
                     }
                     mode::Command::Save => window1.save(),
                     _ => Ok(()), //TODO show this somewhere
@@ -88,5 +97,5 @@ fn startup() -> Result<(), Box<Error>> {
         }
     }
 
-    Ok(())
+    Ok(false)
 }
