@@ -305,10 +305,10 @@ impl Buffer {
     }
 
     /// Calls the closure in scan order on the rectangular area.
-    pub fn display<F>(&self, start_line: usize, size: geometry::Size, wrap: Wrap, mut f: F)
+    pub fn display<F>(&self, start_line: usize, size: geometry::Size, wrap: &Wrap, mut f: F)
         where F: FnMut(&Display)
     {
-        if wrap != Wrap::default(wrap.width) {
+        if *wrap != Wrap::default(wrap.width) {
             panic!("TODO unsupported wrap");
         }
 
@@ -394,6 +394,16 @@ impl Buffer {
         let mut ans: Vec<(&i64, &Position)> = self.anchors.iter().collect();
         ans.sort_by_key(|x| x.1);
         ans
+    }
+
+    /// Get the line of an anchor.
+    /// The [0] value is the data line.
+    /// The [1] value is the wrap line offset from that line.
+    pub fn get_anchor_line(&self, a: &Anchor, w: &Wrap) -> CrbResult<(i32, i32)> {
+        let err = CrbError::new("no such anchor");
+        let p = try!(self.anchors.get(&a.id).ok_or(err));
+        // TODO handle wrap
+        Ok((p.line, 0))
     }
 }
 

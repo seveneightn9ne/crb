@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use std::cmp;
 
 use buffer::{Buffer, Anchor};
@@ -6,6 +6,7 @@ use geometry::{Point, Size};
 use mode::{Command, Direction, Mode};
 use buffer::{Display, Wrap};
 use errors::{CrbResult, CrbError};
+use logging;
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
@@ -18,6 +19,7 @@ pub struct Window {
 
     pub mode: Mode,
     cursors: Vec<Anchor>,
+    wrap: Wrap,
 }
 
 impl Window {
@@ -35,6 +37,7 @@ impl Window {
             scroll: 0,
             cursors: cursors,
             mode: Mode::Normal,
+            wrap: Wrap::default(size.width),
         }
     }
 
@@ -68,10 +71,25 @@ impl Window {
     }
 
     pub fn move_cursors(&mut self, m: &Command) -> CrbResult<()> {
-        let mut buf = self.buf.lock().unwrap();
-        for anchor in self.cursors.iter() {
-            try!(buf.move_anchor(anchor, m));
-        }
+        // TODO unlocking and then re-locking to call another method
+        // probably has the wrong multi-threading guarantees.
+        let delta = {
+            let mut buf = self.buf.lock().unwrap();
+            for anchor in self.cursors.iter() {
+                // TODO: this is not good error handling.
+                try!(buf.move_anchor(anchor, m));
+            }
+            let (dataline, wrapline) =
+                try!(buf.get_anchor_line(self.cursors.last().unwrap(), &self.wrap));
+            let bottom = self.scroll + self.size.height;
+            // TODO: handle wrap
+            logging::debug(&format!("{} {}", dataline, wrapline).to_owned());
+            let up = cmp::min(0, dataline - self.scroll);
+            let down = cmp::max(0, dataline - bottom + 2);
+            let delta = up + down;
+            delta
+        };
+        try!(self.scroll(&Command::Scroll(delta)));
         Ok(())
     }
 
@@ -79,9 +97,7 @@ impl Window {
         where F: FnMut(&Display)
     {
         let buf = self.buf.lock().unwrap();
-        // TODO use real wrap
-        let wrap = Wrap::default(self.size.width);
-        buf.display(self.scroll as usize, self.size, wrap, f);
+        buf.display(self.scroll as usize, self.size, &self.wrap, f);
     }
 
     pub fn insert(&mut self, c: char) -> CrbResult<()> {
