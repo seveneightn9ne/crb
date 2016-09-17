@@ -213,7 +213,8 @@ impl Buffer {
     pub fn insert_text_before(&mut self, anchor: &Anchor, text: char) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
         let pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
-        let cur_line = self.contents[pos.line as usize].text.clone();
+        let err = CrbError::new("delete_at_pos: no line at pos");
+        let cur_line = try!(self.contents.get(pos.line as usize).ok_or(err)).text.clone();
         let (before, after) = cur_line.split_at(pos.offset as usize);
         if text == '\n' {
             self.contents[pos.line as usize] = Line { text: before.to_string() };
@@ -240,7 +241,8 @@ impl Buffer {
 
     /// Delete backwards from the position.
     fn delete_at_pos(&mut self, pos: &Position) -> Result<(), CrbError> {
-        let cur_line = self.contents[pos.line as usize].text.clone();
+        let err = CrbError::new("delete_at_pos: no line at pos");
+        let cur_line = try!(self.contents.get(pos.line as usize).ok_or(err)).text.clone();
         if pos.offset == 0 && pos.line == 0 {
             Ok(())
         } else if pos.offset == 0 {
