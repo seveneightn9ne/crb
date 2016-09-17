@@ -1,13 +1,13 @@
 use rustbox::Key;
 use std::collections::HashMap;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Mode {
     Normal,
     Insert,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Command {
     MoveLeft(i32),
     MoveRight(i32),
@@ -31,6 +31,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
             match key {
                 Key::Char(c) => Command::Insert(c),
                 Key::Esc => Command::ChangeMode(Mode::Normal),
+                Key::F(1) => Command::ChangeMode(Mode::Normal),
                 Key::Backspace => Command::Delete,
                 Key::Enter => Command::NewLine,
                 Key::Down => Command::MoveDown(1),

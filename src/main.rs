@@ -62,19 +62,25 @@ fn startup() -> Result<bool, Box<Error>> {
     let buf2 = buffer::Buffer::empty();
     let buf2 = Mutex::new(buf2);
 
+    let buf3 = buffer::Buffer::empty();
+    let buf3 = Mutex::new(buf3);
+
     let width = rustbox.width() as i32;
     let height = rustbox.height() as i32;
 
     let mut window1 = Window::new(buf1, Point::new(0, 0), Size::new(width, height - 10));
     let mut window2 = Window::new(buf2, Point::new(0, height - 10), Size::new(width, 10));
+    let mut window3 = Window::new(buf3, Point::new(width / 2, 2), Size::new(width / 2 - 1, 2));
 
     loop {
         graphics::render(&rustbox, &window1);
         graphics::render(&rustbox, &window2);
+        graphics::render(&rustbox, &window3);
 
         rustbox.present();
 
-        match rustbox.poll_event(false) {
+        let event = rustbox.poll_event(false);
+        match event {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 let cmd = mode::map(window1.mode.clone(), key);
                 let res = match cmd {
@@ -91,7 +97,8 @@ fn startup() -> Result<bool, Box<Error>> {
                         Ok(())
                     }
                     mode::Command::RecompileSelf => {
-                        window2.clear();
+                        // TODO handle error
+                        let _ = window2.clear();
                         let res = hacks::recompile();
                         let restart =
                             res.and_then(|output| fill_compilation_buffer(&mut window2, output));
@@ -111,12 +118,20 @@ fn startup() -> Result<bool, Box<Error>> {
             Err(e) => panic!("{}", e),
             _ => {}
         }
+        // TODO handle errors
+        if let Ok(rustbox::Event::KeyEvent(key)) = event {
+            let cmd = mode::map(window1.mode.clone(), key);
+            let _ = window3.clear();
+            let _ = window3.insert_s(&format!("{:?}", event));
+            let _ = window3.insert('\n');
+            let _ = window3.insert_s(&format!("{:?}", cmd));
+        }
     }
 
     Ok(false)
 }
 
-pub fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult<bool> {
+fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult<bool> {
     try!(w.clear());
     if output.status.success() {
         try!(w.insert_s("Compilation successful\n\n"));
