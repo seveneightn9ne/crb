@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::io::{Read, Write};
 use std::collections::HashMap;
-use mode::Command;
+use mode::{Command, Direction};
 use std::cmp;
 use std::cmp::Ordering;
 use std;
@@ -163,18 +163,21 @@ impl Buffer {
 
     pub fn new_anchor(&mut self) -> Anchor {
         let a = Anchor { id: self.new_anchor_id() };
-        let p = Position {
-            line: 0,
-            offset: 0,
-            wishful_offset: None,
-        };
+        let p = Position::new(0, 0);
         self.anchors.insert(a.id, p);
         a
     }
 
     pub fn move_anchor(&mut self, anchor: &Anchor, m: &Command) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
-        let mut p2: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let pos = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let pos2 = try!(self.move_pos(&pos, m));
+        self.anchors.insert(anchor.id, pos2);
+        Ok(())
+    }
+
+    fn move_pos(&mut self, pos: &Position, m: &Command) -> Result<Position, CrbError> {
+        let mut p2 = pos.clone();
         let m = canonicalize_move(m);
         let p3: Position = match m {
             Command::MoveRight(n) => {
@@ -199,8 +202,7 @@ impl Buffer {
             }
             _ => return Err(CrbError::new("unsupported move command")),
         };
-        self.anchors.insert(anchor.id, p3);
-        Ok(())
+        Ok(p3)
     }
 
     fn new_anchor_id(&mut self) -> i64 {
@@ -226,26 +228,49 @@ impl Buffer {
         }
     }
 
-    pub fn delete_at(&mut self, anchor: &Anchor) -> Result<(), CrbError> {
+    pub fn delete_at(&mut self, anchor: &Anchor, d: &Direction) -> Result<(), CrbError> {
         let err = CrbError::new("no such anchor");
-        let mut pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let pos = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
+        let pos: Position = match *d {
+            Direction::B => pos.clone(),
+            Direction::F => try!(self.move_pos(&pos, &Command::MoveRight(1))),
+        };
+        self.delete_at_pos(&pos)
+    }
+
+    /// Delete backwards from the position.
+    fn delete_at_pos(&mut self, pos: &Position) -> Result<(), CrbError> {
         let cur_line = self.contents[pos.line as usize].text.clone();
         if pos.offset == 0 && pos.line == 0 {
             Ok(())
         } else if pos.offset == 0 {
             let old_text = self.contents[(pos.line - 1) as usize].text.clone();
             self.contents[(pos.line - 1) as usize] = Line { text: old_text.clone() + &cur_line };
-            self.anchors.insert(anchor.id,
-                                Position::new(pos.line - 1, old_text.chars().count() as i32));
+
+            // move anchors the line that got merged up
+            for (_, p) in self.anchors.iter_mut() {
+                if p.line == pos.line {
+                    let p2 = Position::new(p.line - 1,
+                                           p.offset + (old_text.chars().count() as i32));
+                    *p = p2;
+                }
+            }
+
             self.contents.remove(pos.line as usize);
             Ok(())
         } else {
             let (before, after) = cur_line.split_at(pos.offset as usize);
             let before_argh: String = before.chars().take(before.len() - 1).collect();
             self.contents[pos.line as usize] = Line { text: before_argh.to_string() + after };
-            pos.offset -= 1;
-            // TODO move anchors on this line
-            self.anchors.insert(anchor.id, pos);
+
+            // move anchors on this line
+            for (_, p) in self.anchors.iter_mut() {
+                if p.line == pos.line && p.offset >= pos.offset {
+                    let p2 = Position::new(p.line, cmp::max(0, p.offset - 1));
+                    *p = p2
+                }
+            }
+
             Ok(())
         }
     }
@@ -255,14 +280,7 @@ impl Buffer {
         self.contents.push(Line { text: "".to_string() });
         self.anchors = self.anchors
             .iter()
-            .map(|(&a, _)| {
-                (a,
-                 Position {
-                    line: 0,
-                    offset: 0,
-                    wishful_offset: None,
-                })
-            })
+            .map(|(&a, _)| (a, Position::new(0, 0)))
             .collect::<HashMap<_, _>>();
         Ok(())
     }

@@ -21,6 +21,7 @@ use rustbox::RustBox;
 use window::Window;
 use geometry::{Point, Size};
 use errors::CrbResult;
+use mode::Command;
 
 fn main() {
     logging::debug("started");
@@ -84,19 +85,19 @@ fn startup() -> Result<bool, Box<Error>> {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 let cmd = mode::map(window1.mode.clone(), key);
                 let res = match cmd {
-                    mode::Command::Quit => break,
-                    mode::Command::MoveUp(_) => window1.move_cursors(&cmd),
-                    mode::Command::MoveDown(_) => window1.move_cursors(&cmd),
-                    mode::Command::MoveLeft(_) => window1.move_cursors(&cmd),
-                    mode::Command::MoveRight(_) => window1.move_cursors(&cmd),
-                    mode::Command::Insert(c) => window1.insert(c),
-                    mode::Command::Delete => window1.delete(),
-                    mode::Command::NewLine => window1.insert('\n'),
-                    mode::Command::ChangeMode(m) => {
+                    Command::Quit => break,
+                    Command::MoveUp(_) => window1.move_cursors(&cmd),
+                    Command::MoveDown(_) => window1.move_cursors(&cmd),
+                    Command::MoveLeft(_) => window1.move_cursors(&cmd),
+                    Command::MoveRight(_) => window1.move_cursors(&cmd),
+                    Command::Insert(c) => window1.insert(c),
+                    Command::Delete(d) => window1.delete(d),
+                    Command::NewLine => window1.insert('\n'),
+                    Command::ChangeMode(m) => {
                         window1.mode = m;
                         Ok(())
                     }
-                    mode::Command::RecompileSelf => {
+                    Command::RecompileSelf => {
                         // TODO handle error
                         let _ = window2.clear();
                         let res = hacks::recompile();
@@ -107,7 +108,7 @@ fn startup() -> Result<bool, Box<Error>> {
                         }
                         restart.and(Ok(()))
                     }
-                    mode::Command::Save => window1.save(),
+                    Command::Save => window1.save(),
                     _ => Ok(()), //TODO show this somewhere
                 };
                 if let Err(e) = res {

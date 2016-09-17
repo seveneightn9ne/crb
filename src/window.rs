@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
-use mode::{Command, Mode};
+use mode::{Command, Direction, Mode};
 use buffer::{Display, Wrap};
 use errors::CrbResult;
 
@@ -101,10 +101,10 @@ impl Window {
         buf.clear()
     }
 
-    pub fn delete(&mut self) -> CrbResult<()> {
+    pub fn delete(&mut self, d: Direction) -> CrbResult<()> {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {
-            try!(buf.delete_at(anchor));
+            try!(buf.delete_at(anchor, &d));
         }
         Ok(())
     }

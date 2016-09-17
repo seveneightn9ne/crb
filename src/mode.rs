@@ -15,12 +15,18 @@ pub enum Command {
     MoveDown(i32),
     Quit,
     Insert(char),
-    Delete,
+    Delete(Direction),
     NewLine,
     Unknown,
     ChangeMode(Mode),
     RecompileSelf,
     Save,
+}
+
+#[derive(Debug, Clone)]
+pub enum Direction {
+    F,
+    B,
 }
 
 type ModeMap = HashMap<Key, Command>;
@@ -32,7 +38,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Char(c) => Command::Insert(c),
                 Key::Esc => Command::ChangeMode(Mode::Normal),
                 Key::F(1) => Command::ChangeMode(Mode::Normal),
-                Key::Backspace => Command::Delete,
+                Key::Backspace => Command::Delete(Direction::B),
                 Key::Enter => Command::NewLine,
                 Key::Down => Command::MoveDown(1),
                 Key::Up => Command::MoveUp(1),
@@ -48,6 +54,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Char('k') => Command::MoveUp(1),
                 Key::Char('h') => Command::MoveLeft(1),
                 Key::Char('l') => Command::MoveRight(1),
+                Key::Char('x') => Command::Delete(Direction::F),
                 Key::Down => Command::MoveDown(1),
                 Key::Up => Command::MoveUp(1),
                 Key::Left => Command::MoveLeft(1),
