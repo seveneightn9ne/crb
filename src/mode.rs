@@ -33,6 +33,10 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Esc => Command::ChangeMode(Mode::Normal),
                 Key::Backspace => Command::Delete,
                 Key::Enter => Command::NewLine,
+                Key::Down => Command::MoveDown(1),
+                Key::Up => Command::MoveUp(1),
+                Key::Left => Command::MoveLeft(1),
+                Key::Right => Command::MoveRight(1),
                 _ => Command::Unknown,
             }
         }
