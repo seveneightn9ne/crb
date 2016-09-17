@@ -86,6 +86,21 @@ impl Window {
         Ok(())
     }
 
+    pub fn insert_s(&mut self, s: &str) -> CrbResult<()> {
+        let mut buf = self.buf.lock().unwrap();
+        for c in s.chars() {
+            for anchor in self.cursors.iter() {
+                try!(buf.insert_text_before(anchor, c));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn clear(&mut self) -> CrbResult<()> {
+        let mut buf = self.buf.lock().unwrap();
+        buf.clear()
+    }
+
     pub fn delete(&mut self) -> CrbResult<()> {
         let mut buf = self.buf.lock().unwrap();
         for anchor in self.cursors.iter() {

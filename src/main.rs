@@ -19,6 +19,7 @@ use rustbox::RustBox;
 
 use window::Window;
 use geometry::{Point, Size};
+use errors::CrbResult;
 
 fn main() {
     logging::debug("started");
@@ -26,7 +27,13 @@ fn main() {
     // Restart loop.
     loop {
         match startup() {
-            Ok(true) => {}
+            Ok(true) => {
+                let res = hacks::restart();
+                if let Err(e) = res {
+                    println!("Fatal error restarting: {}", e);
+                }
+                break;
+            }
             Ok(false) => break,
             Err(e) => println!("Fatal error: {}", e),
         }
@@ -51,13 +58,18 @@ fn startup() -> Result<bool, Box<Error>> {
 
     let buf1 = Mutex::new(buf1);
 
+    let buf2 = buffer::Buffer::empty();
+    let buf2 = Mutex::new(buf2);
+
     let width = rustbox.width() as i32;
     let height = rustbox.height() as i32;
 
-    let mut window1 = Window::new(buf1, Point::new(0, 0), Size::new(width, height));
+    let mut window1 = Window::new(buf1, Point::new(0, 0), Size::new(width, height - 10));
+    let mut window2 = Window::new(buf2, Point::new(0, height - 10), Size::new(width, 10));
 
     loop {
         graphics::render(&rustbox, &window1);
+        graphics::render(&rustbox, &window2);
 
         rustbox.present();
 
@@ -78,11 +90,13 @@ fn startup() -> Result<bool, Box<Error>> {
                         Ok(())
                     }
                     mode::Command::RecompileSelf => {
-                        let r = hacks::recompile();
-                        if r.is_ok() {
+                        let res = hacks::recompile();
+                        let restart =
+                            res.and_then(|output| fill_compilation_buffer(&mut window2, output));
+                        if let Ok(true) = restart {
                             return Ok(true);
                         }
-                        r
+                        restart.and(Ok(()))
                     }
                     mode::Command::Save => window1.save(),
                     _ => Ok(()), //TODO show this somewhere
@@ -98,4 +112,15 @@ fn startup() -> Result<bool, Box<Error>> {
     }
 
     Ok(false)
+}
+
+pub fn fill_compilation_buffer(w: &mut Window, output: duct::Output) -> CrbResult<bool> {
+    try!(w.clear());
+    if output.status == 0 {
+        try!(w.insert_s("Compilation successful\n\n"));
+        Ok(false)
+    } else {
+        try!(w.insert_s("Compilation failed\n\n"));
+        Ok(false)
+    }
 }

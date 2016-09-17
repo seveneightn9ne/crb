@@ -95,6 +95,7 @@ pub enum Symbol {
 }
 
 pub struct Buffer {
+    // Invariant: contents.len() > 0
     contents: Vec<Line>,
     pub file_path: Option<String>,
     pub unsaved: bool,
@@ -110,9 +111,12 @@ impl Buffer {
 
     pub fn load_from_file(path: &str) -> Result<Buffer, io::Error> {
         let s = try!(read_file(path));
-        let contents: Vec<Line> = s.split("\n")
+        let mut contents: Vec<Line> = s.split("\n")
             .map(|x| Line { text: x.to_string() })
             .collect();
+        if contents.len() == 0 {
+            contents.push(Line { text: "".to_string() });
+        }
         let mut buf = Buffer::empty();
         buf.contents = contents;
         buf.file_path = Some(path.to_string());
@@ -128,7 +132,7 @@ impl Buffer {
 
     pub fn empty() -> Buffer {
         Buffer {
-            contents: Vec::new(),
+            contents: vec![Line { text: "".to_string() }],
             file_path: None,
             unsaved: false,
             newfile: true,
@@ -244,6 +248,23 @@ impl Buffer {
             self.anchors.insert(anchor.id, pos);
             Ok(())
         }
+    }
+
+    pub fn clear(&mut self) -> CrbResult<()> {
+        self.contents.clear();
+        self.contents.push(Line { text: "".to_string() });
+        self.anchors = self.anchors
+            .iter()
+            .map(|(&a, _)| {
+                (a,
+                 Position {
+                    line: 0,
+                    offset: 0,
+                    wishful_offset: None,
+                })
+            })
+            .collect::<HashMap<_, _>>();
+        Ok(())
     }
 
     /** Observers **/
