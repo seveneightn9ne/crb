@@ -93,6 +93,7 @@ fn startup() -> Result<bool, Box<Error>> {
                     Command::Insert(c) => window1.insert(c),
                     Command::Delete(d) => window1.delete(d),
                     Command::NewLine => window1.insert('\n'),
+                    Command::Scroll(_) => window1.scroll(&cmd),
                     Command::ChangeMode(m) => {
                         window1.mode = m;
                         Ok(())
@@ -135,7 +136,10 @@ fn startup() -> Result<bool, Box<Error>> {
 fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult<bool> {
     try!(w.clear());
     if output.status.success() {
-        try!(w.insert_s("Compilation successful\n\n"));
+        try!(w.insert_s("Compilation successful\n"));
+        Ok(true)
+    } else {
+        try!(w.insert_s("Compilation failed\n"));
         match str::from_utf8(&output.stderr) {
             Ok(s) => try!(w.insert_s(s)),
             Err(e) => {
@@ -151,9 +155,6 @@ fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult
                 try!(w.insert_s(&format!("{}", e)));
             }
         };
-        Ok(true)
-    } else {
-        try!(w.insert_s("Compilation failed\n\n"));
         Ok(false)
     }
 }

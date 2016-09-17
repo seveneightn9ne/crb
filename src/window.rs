@@ -1,15 +1,21 @@
 use std::sync::Mutex;
+use std::cmp;
 
 use buffer::{Buffer, Anchor};
 use geometry::{Point, Size};
 use mode::{Command, Direction, Mode};
 use buffer::{Display, Wrap};
-use errors::CrbResult;
+use errors::{CrbResult, CrbError};
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
+
+    /// Location on the screen.
     pub topleft: Point,
     pub size: Size,
+    /// What line the top is at
+    pub scroll: i32,
+
     pub mode: Mode,
     cursors: Vec<Anchor>,
 }
@@ -26,6 +32,7 @@ impl Window {
             buf: buf,
             topleft: topleft,
             size: size,
+            scroll: 0,
             cursors: cursors,
             mode: Mode::Normal,
         }
@@ -74,8 +81,7 @@ impl Window {
         let buf = self.buf.lock().unwrap();
         // TODO use real wrap
         let wrap = Wrap::default(self.size.width);
-        let start_line = 0;
-        buf.display(start_line, self.size, wrap, f);
+        buf.display(self.scroll as usize, self.size, wrap, f);
     }
 
     pub fn insert(&mut self, c: char) -> CrbResult<()> {
@@ -107,5 +113,17 @@ impl Window {
             try!(buf.delete_at(anchor, &d));
         }
         Ok(())
+    }
+
+    pub fn scroll(&mut self, c: &Command) -> CrbResult<()> {
+        let buf = self.buf.lock().unwrap();
+        if let Command::Scroll(n) = *c {
+            self.scroll += n;
+            // TODO this needs to happen whenever the buffer changes size.
+            self.scroll = cmp::max(0, cmp::min(self.scroll, buf.count_lines()));
+            Ok(())
+        } else {
+            Err(CrbError::new(&format!("invalid scroll command {:?}", c)))
+        }
     }
 }

@@ -298,7 +298,7 @@ impl Buffer {
     }
 
     /// Calls the closure in scan order on the rectangular area.
-    pub fn display<F>(&self, start_line: i32, size: geometry::Size, wrap: Wrap, mut f: F)
+    pub fn display<F>(&self, start_line: usize, size: geometry::Size, wrap: Wrap, mut f: F)
         where F: FnMut(&Display)
     {
         if wrap != Wrap::default(wrap.width) {
