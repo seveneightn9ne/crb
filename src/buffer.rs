@@ -303,9 +303,6 @@ impl Buffer {
                 let line_num_str = (buf_y + 1).to_string();
                 let mut line_num_chars = line_num_str.chars();
                 let offset = col_size - line_num_chars.clone().count();
-                if offset < 0 {
-                    panic!("Negative line number offset");
-                }
                 for i in 0..col_size {
                     if offset <= i {
                         let d = Display {
