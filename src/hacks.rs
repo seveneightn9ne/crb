@@ -1,15 +1,18 @@
-use duct;
+use std::process;
 use std::process::Command;
 use std::os::unix::process::CommandExt;
 
 use errors::{CrbError, CrbResult};
 
-pub fn recompile() -> CrbResult<duct::Output> {
-    duct::sh("make")
-        .capture_stdout()
-        .capture_stderr()
-        .unchecked()
-        .run()
+pub fn recompile() -> CrbResult<process::Output> {
+    // duct::sh("make")
+    //     .capture_stdout()
+    //     .capture_stderr()
+    //     .unchecked()
+    //     .run()
+    //     .map_err(|e| CrbError::new(&format!("Error recompiling: {:?}", e)))
+    Command::new("make")
+        .output()
         .map_err(|e| CrbError::new(&format!("Error recompiling: {:?}", e)))
 }
 

@@ -1,5 +1,4 @@
 extern crate rustbox;
-extern crate duct;
 
 mod buffer;
 mod geometry;
@@ -14,6 +13,8 @@ use std::default::Default;
 use std::env;
 use std::error::Error;
 use std::sync::Mutex;
+use std::str;
+use std::process;
 
 use rustbox::RustBox;
 
@@ -90,6 +91,7 @@ fn startup() -> Result<bool, Box<Error>> {
                         Ok(())
                     }
                     mode::Command::RecompileSelf => {
+                        window2.clear();
                         let res = hacks::recompile();
                         let restart =
                             res.and_then(|output| fill_compilation_buffer(&mut window2, output));
@@ -114,11 +116,26 @@ fn startup() -> Result<bool, Box<Error>> {
     Ok(false)
 }
 
-pub fn fill_compilation_buffer(w: &mut Window, output: duct::Output) -> CrbResult<bool> {
+pub fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult<bool> {
     try!(w.clear());
-    if output.status == 0 {
+    if output.status.success() {
         try!(w.insert_s("Compilation successful\n\n"));
-        Ok(false)
+        match str::from_utf8(&output.stderr) {
+            Ok(s) => try!(w.insert_s(s)),
+            Err(e) => {
+                try!(w.insert_s("<stderr-utf8-error>\n"));
+                try!(w.insert_s(&format!("{}", e)));
+            }
+        };
+        try!(w.insert('\n'));
+        match str::from_utf8(&output.stdout) {
+            Ok(s) => try!(w.insert_s(s)),
+            Err(e) => {
+                try!(w.insert_s("<stdout-utf8-error>\n"));
+                try!(w.insert_s(&format!("{}", e)));
+            }
+        };
+        Ok(true)
     } else {
         try!(w.insert_s("Compilation failed\n\n"));
         Ok(false)

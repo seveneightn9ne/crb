@@ -5,4 +5,3 @@ authors = ["Jess Kenney <jess@jesskenney.com>", "Miles Steele <miles@milessteele
 
 [dependencies]
 rustbox = "*"
-duct = "*"
