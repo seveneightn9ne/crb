@@ -49,6 +49,10 @@ pub fn render(rb: &RustBox, window: &Window) {
                 // TODO check if the anchor is a cursor.
                 cursor_is_next = true;
             }
+            Symbol::ColorChar(c, color) => {
+                rb.print_char(x, y, sty, color, bg, c);
+                cursor_is_next = false;
+            }
         }
     });
 }

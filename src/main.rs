@@ -8,11 +8,12 @@ mod errors;
 mod logging;
 mod mode;
 mod hacks;
+mod settings;
 
 use std::default::Default;
 use std::env;
 use std::error::Error;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::str;
 use std::process;
 
@@ -22,6 +23,7 @@ use window::Window;
 use geometry::{Point, Size};
 use errors::CrbResult;
 use mode::Command;
+use settings::Settings;
 
 fn main() {
     logging::debug("started");
@@ -48,22 +50,24 @@ fn startup() -> Result<bool, Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
+    let settings = Arc::new(Mutex::new(Settings::new()));
+
     let buf1 = match env::args().nth(1) {
         Some(path) => {
-            match buffer::Buffer::load_from_file(&path) {
+            match buffer::Buffer::load_from_file(&path, settings.clone()) {
                 Ok(buffer) => buffer,
-                _ => buffer::Buffer::new_file(&path),
+                _ => buffer::Buffer::new_file(&path, settings.clone()),
             }
         }
-        None => buffer::Buffer::empty(),
+        None => buffer::Buffer::empty(settings.clone()),
     };
 
     let buf1 = Mutex::new(buf1);
 
-    let buf2 = buffer::Buffer::empty();
+    let buf2 = buffer::Buffer::empty(settings.clone());
     let buf2 = Mutex::new(buf2);
 
-    let buf3 = buffer::Buffer::empty();
+    let buf3 = buffer::Buffer::empty(settings.clone());
     let buf3 = Mutex::new(buf3);
 
     let width = rustbox.width() as i32;

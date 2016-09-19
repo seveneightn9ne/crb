@@ -6,7 +6,11 @@ use mode::{Command, Direction};
 use std::cmp;
 use std::cmp::Ordering;
 use std;
+use settings::Settings;
+use settings;
+use std::sync::{Arc, Mutex};
 
+use rustbox::Color;
 use geometry;
 use errors::{CrbError, CrbResult};
 
@@ -90,6 +94,7 @@ pub struct Display {
 #[derive(Debug)]
 pub enum Symbol {
     Char(char),
+    ColorChar(char, Color),
     Anchor(Anchor),
     Void,
 }
@@ -100,6 +105,7 @@ pub struct Buffer {
     pub file_path: Option<String>,
     pub unsaved: bool,
     pub newfile: bool,
+    settings: Arc<Mutex<Settings>>,
 
     // Map from anchor id to position.
     anchors: HashMap<i64, Position>,
@@ -109,7 +115,7 @@ pub struct Buffer {
 impl Buffer {
     /** Creators **/
 
-    pub fn load_from_file(path: &str) -> Result<Buffer, io::Error> {
+    pub fn load_from_file(path: &str, settings: Arc<Mutex<Settings>>) -> Result<Buffer, io::Error> {
         let s = try!(read_file(path));
         let mut contents: Vec<Line> = s.split("\n")
             .map(|x| Line { text: x.to_string() })
@@ -117,20 +123,20 @@ impl Buffer {
         if contents.len() == 0 {
             contents.push(Line { text: "".to_string() });
         }
-        let mut buf = Buffer::empty();
+        let mut buf = Buffer::empty(settings);
         buf.contents = contents;
         buf.file_path = Some(path.to_string());
         buf.newfile = false;
         Ok(buf)
     }
 
-    pub fn new_file(path: &str) -> Buffer {
-        let mut buf = Buffer::empty();
+    pub fn new_file(path: &str, settings: Arc<Mutex<Settings>>) -> Buffer {
+        let mut buf = Buffer::empty(settings);
         buf.file_path = Some(path.to_string());
         buf
     }
 
-    pub fn empty() -> Buffer {
+    pub fn empty(settings: Arc<Mutex<Settings>>) -> Buffer {
         Buffer {
             contents: vec![Line { text: "".to_string() }],
             file_path: None,
@@ -138,6 +144,7 @@ impl Buffer {
             newfile: true,
             anchors: HashMap::new(),
             next_anchor_id: 0,
+            settings: settings,
         }
     }
 
@@ -323,12 +330,16 @@ impl Buffer {
                 let line_num_str = (buf_y + 1).to_string();
                 let mut line_num_chars = line_num_str.chars();
                 let offset = col_size - line_num_chars.clone().count();
+                let color = match self.settings.lock().unwrap().get("color-linenumbers") {
+                    Some(&settings::Value::Color(c)) => c,
+                    _ => Color::White,
+                };
                 for i in 0..col_size {
                     if offset <= i {
                         let d = Display {
                             x: view_x,
                             y: view_y,
-                            symbol: Symbol::Char(line_num_chars.next().unwrap()),
+                            symbol: Symbol::ColorChar(line_num_chars.next().unwrap(), color),
                         };
                         f(&d);
                     }
