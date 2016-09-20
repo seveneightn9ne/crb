@@ -1,4 +1,4 @@
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 use std::cmp;
 
 use buffer::{Buffer, Anchor};

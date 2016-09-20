@@ -3,8 +3,10 @@ use rustbox::Color;
 
 pub enum Value {
     Color(Color),
+    #[allow(dead_code)]
     Number(i32),
-    Stringg(String),
+    #[allow(dead_code)]
+    String(String),
 }
 
 pub struct Settings {
@@ -24,6 +26,7 @@ impl Settings {
         self.settings.get(&setting.to_string())
     }
 
+    #[allow(dead_code)]
     pub fn set(&mut self, setting: &str, value: Value) {
         self.settings.insert(setting.to_string(), value);
     }
