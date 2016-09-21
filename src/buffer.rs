@@ -6,7 +6,7 @@ use mode::{Command, Direction};
 use std::cmp;
 use std::cmp::Ordering;
 use std;
-use settings::Settings;
+use state::State;
 use settings;
 use std::sync::{Arc, Mutex};
 use unicode_width::UnicodeWidthChar;
@@ -107,7 +107,7 @@ pub struct Buffer {
     pub file_path: Option<String>,
     pub unsaved: bool,
     pub newfile: bool,
-    settings: Arc<Mutex<Settings>>,
+    state: Arc<Mutex<State>>,
 
     // Map from anchor id to position.
     anchors: HashMap<i64, Position>,
@@ -117,7 +117,7 @@ pub struct Buffer {
 impl Buffer {
     /** Creators **/
 
-    pub fn load_from_file(path: &str, settings: Arc<Mutex<Settings>>) -> Result<Buffer, io::Error> {
+    pub fn load_from_file(path: &str, state: Arc<Mutex<State>>) -> Result<Buffer, io::Error> {
         let s = try!(read_file(path));
         let mut contents: Vec<Line> = s.split("\n")
             .map(|x| Line { text: x.to_string() })
@@ -125,20 +125,20 @@ impl Buffer {
         if contents.len() == 0 {
             contents.push(Line { text: "".to_string() });
         }
-        let mut buf = Buffer::empty(settings);
+        let mut buf = Buffer::empty(state);
         buf.contents = contents;
         buf.file_path = Some(path.to_string());
         buf.newfile = false;
         Ok(buf)
     }
 
-    pub fn new_file(path: &str, settings: Arc<Mutex<Settings>>) -> Buffer {
-        let mut buf = Buffer::empty(settings);
+    pub fn new_file(path: &str, state: Arc<Mutex<State>>) -> Buffer {
+        let mut buf = Buffer::empty(state);
         buf.file_path = Some(path.to_string());
         buf
     }
 
-    pub fn empty(settings: Arc<Mutex<Settings>>) -> Buffer {
+    pub fn empty(state: Arc<Mutex<State>>) -> Buffer {
         Buffer {
             contents: vec![Line { text: "".to_string() }],
             file_path: None,
@@ -146,7 +146,7 @@ impl Buffer {
             newfile: true,
             anchors: HashMap::new(),
             next_anchor_id: 0,
-            settings: settings,
+            state: state,
         }
     }
 
@@ -338,7 +338,7 @@ impl Buffer {
                 let line_num_str = (buf_y + 1).to_string();
                 let mut line_num_chars = line_num_str.chars();
                 let offset = col_size - line_num_chars.clone().count();
-                let color = match self.settings.lock().unwrap().get("color-linenumbers") {
+                let color = match self.state.lock().unwrap().settings.get("color-linenumbers") {
                     Some(&settings::Value::Color(c)) => c,
                     _ => Color::White,
                 };

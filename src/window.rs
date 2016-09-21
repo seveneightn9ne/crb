@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::cmp;
 
 use buffer::{Buffer, Anchor};
@@ -6,10 +6,12 @@ use geometry::{Point, Size};
 use mode::{Command, Direction, Mode};
 use buffer::{Display, Wrap};
 use errors::{CrbResult, CrbError};
+use state::State;
 use logging;
 
 pub struct Window {
     pub buf: Mutex<Buffer>,
+    state: Arc<Mutex<State>>,
 
     /// Location on the screen.
     pub topleft: Point,
@@ -20,10 +22,18 @@ pub struct Window {
     pub mode: Mode,
     cursors: Vec<Anchor>,
     wrap: Wrap,
+    index: i32,
+}
+
+fn getAndIncrementNextWindowIndex(statelock: Arc<Mutex<State>>) -> i32 {
+    let mut state = statelock.lock().unwrap();
+    let next = state.next_window_index;
+    state.next_window_index = next + 1;
+    next
 }
 
 impl Window {
-    pub fn new(buf: Mutex<Buffer>, topleft: Point, size: Size) -> Window {
+    pub fn new(buf: Mutex<Buffer>, topleft: Point, size: Size, state: Arc<Mutex<State>>) -> Window {
         let mut cursors = Vec::new();
         {
             let mut buf = buf.lock().unwrap();
@@ -32,6 +42,8 @@ impl Window {
         }
         Window {
             buf: buf,
+            index: getAndIncrementNextWindowIndex(state.clone()),
+            state: state,
             topleft: topleft,
             size: size,
             scroll: 0,
@@ -58,6 +70,7 @@ impl Window {
             true => "*".to_string(),
             false => " ".to_string(),
         };
+        let index = "[".to_string() + &self.index.to_string() + &"] ".to_string();
         let rest = match buf.file_path {
             Some(ref thing) => {
                 match buf.newfile {
@@ -67,7 +80,7 @@ impl Window {
             }
             None => "empty buffer".to_string(),
         };
-        unsaved_prefix + &rest
+        unsaved_prefix + &index + &rest
     }
 
     pub fn move_cursors(&mut self, m: &Command) -> CrbResult<()> {

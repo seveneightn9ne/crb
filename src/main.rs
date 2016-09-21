@@ -10,6 +10,7 @@ mod logging;
 mod mode;
 mod hacks;
 mod settings;
+mod state;
 
 use std::default::Default;
 use std::env;
@@ -24,7 +25,7 @@ use window::Window;
 use geometry::{Point, Size};
 use errors::CrbResult;
 use mode::Command;
-use settings::Settings;
+use state::State;
 
 fn main() {
     logging::debug("started");
@@ -51,32 +52,41 @@ fn startup() -> Result<bool, Box<Error>> {
         Result::Err(e) => return Err(Box::new(e)),
     };
 
-    let settings = Arc::new(Mutex::new(Settings::new()));
+    let state = Arc::new(Mutex::new(State::new()));
 
     let buf1 = match env::args().nth(1) {
         Some(path) => {
-            match buffer::Buffer::load_from_file(&path, settings.clone()) {
+            match buffer::Buffer::load_from_file(&path, state.clone()) {
                 Ok(buffer) => buffer,
-                _ => buffer::Buffer::new_file(&path, settings.clone()),
+                _ => buffer::Buffer::new_file(&path, state.clone()),
             }
         }
-        None => buffer::Buffer::empty(settings.clone()),
+        None => buffer::Buffer::empty(state.clone()),
     };
 
     let buf1 = Mutex::new(buf1);
 
-    let buf2 = buffer::Buffer::empty(settings.clone());
+    let buf2 = buffer::Buffer::empty(state.clone());
     let buf2 = Mutex::new(buf2);
 
-    let buf3 = buffer::Buffer::empty(settings.clone());
+    let buf3 = buffer::Buffer::empty(state.clone());
     let buf3 = Mutex::new(buf3);
 
     let width = rustbox.width() as i32;
     let height = rustbox.height() as i32;
 
-    let mut window1 = Window::new(buf1, Point::new(0, 0), Size::new(width, height - 10));
-    let mut window2 = Window::new(buf2, Point::new(0, height - 10), Size::new(width, 10));
-    let mut window3 = Window::new(buf3, Point::new(width / 2, 2), Size::new(width / 2 - 1, 2));
+    let mut window1 = Window::new(buf1,
+                                  Point::new(0, 0),
+                                  Size::new(width, height - 10),
+                                  state.clone());
+    let mut window2 = Window::new(buf2,
+                                  Point::new(0, height - 10),
+                                  Size::new(width, 10),
+                                  state.clone());
+    let mut window3 = Window::new(buf3,
+                                  Point::new(width / 2, 2),
+                                  Size::new(width / 2 - 1, 2),
+                                  state.clone());
 
     loop {
         graphics::render(&rustbox, &window1);
