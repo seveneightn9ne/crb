@@ -25,11 +25,11 @@ pub struct Window {
     index: i32,
 }
 
-fn getAndIncrementNextWindowIndex(statelock: Arc<Mutex<State>>) -> i32 {
+fn do_with_state<F,T>(statelock: Arc<Mutex<State>>, func: F) -> T
+        where F: Fn(&mut State) -> T {
     let mut state = statelock.lock().unwrap();
-    let next = state.next_window_index;
-    state.next_window_index = next + 1;
-    next
+    let t = func(&mut *state);
+    t
 }
 
 impl Window {
@@ -42,7 +42,11 @@ impl Window {
         }
         Window {
             buf: buf,
-            index: getAndIncrementNextWindowIndex(state.clone()),
+            index: do_with_state(state.clone(), |s| {
+                let n = s.next_window_index;
+                s.next_window_index += 1;
+                n
+            }),
             state: state,
             topleft: topleft,
             size: size,
