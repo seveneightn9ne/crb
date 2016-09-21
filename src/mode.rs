@@ -37,6 +37,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
         Mode::Insert => {
             match key {
                 Key::Char(c) => Command::Insert(c),
+                Key::Tab => Command::Insert('\t'),
                 Key::Esc => Command::ChangeMode(Mode::Normal),
                 Key::F(1) => Command::ChangeMode(Mode::Normal),
                 Key::Backspace => Command::Delete(Direction::B),

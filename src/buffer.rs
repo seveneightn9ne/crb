@@ -218,9 +218,15 @@ impl Buffer {
     }
 
     pub fn insert_text_before(&mut self, anchor: &Anchor, text: char) -> Result<(), CrbError> {
+        if text == '\t' {
+            for _ in 0..4 {
+                try!(self.insert_text_before(anchor, ' '));
+            }
+            return Ok(());
+        }
         let err = CrbError::new("no such anchor");
         let pos: Position = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
-        let err = CrbError::new("delete_at_pos: no line at pos");
+        let err = CrbError::new("insert_text_before: no line at pos");
         let cur_line = try!(self.contents.get(pos.line as usize).ok_or(err)).text.clone();
         let (before, after) = cur_line.split_at(pos.offset as usize);
         if text == '\n' {
