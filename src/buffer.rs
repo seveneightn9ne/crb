@@ -9,6 +9,7 @@ use std;
 use settings::Settings;
 use settings;
 use std::sync::{Arc, Mutex};
+use unicode_width::UnicodeWidthChar;
 
 use rustbox::Color;
 use geometry;
@@ -97,6 +98,7 @@ pub enum Symbol {
     ColorChar(char, Color),
     Anchor(Anchor),
     Void,
+    Skip,
 }
 
 pub struct Buffer {
@@ -353,8 +355,19 @@ impl Buffer {
                 }
             }
 
-
+            let mut skip_for = 0;
             for view_x in (view_x + 1)..size.width {
+                if skip_for > 0 {
+                    let d = Display {
+                        x: view_x,
+                        y: view_y,
+                        symbol: Symbol::Skip,
+                    };
+                    f(&d);
+                    skip_for -= 1;
+                    continue;
+                }
+
                 let mut did_anchor = false;
                 if let Some(tpl) = anchors_iter.peek() {
                     let tpl: &(&i64, &Position) = tpl;
@@ -376,7 +389,13 @@ impl Buffer {
                 }
 
                 let s = match line_chars.next() {
-                    Some(c) => Symbol::Char(c),
+                    Some(c) => {
+                        let cwidth = UnicodeWidthChar::width(c).unwrap_or(1);
+                        if cwidth > 1 {
+                            skip_for = cwidth - 1;
+                        }
+                        Symbol::Char(c)
+                    }
                     None => Symbol::Void,
                 };
                 let d = Display {

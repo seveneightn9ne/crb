@@ -41,6 +41,7 @@ pub fn render(rb: &RustBox, window: &Window) {
                 rb.print_char(x, y, sty, fg, bg, ' ');
                 cursor_is_next = false;
             }
+            Symbol::Skip => {}
             Symbol::Char(c) => {
                 rb.print_char(x, y, sty, fg, bg, c);
                 cursor_is_next = false;
