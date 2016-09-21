@@ -25,8 +25,9 @@ pub struct Window {
     index: i32,
 }
 
-fn do_with_state<F,T>(statelock: Arc<Mutex<State>>, func: F) -> T
-        where F: Fn(&mut State) -> T {
+fn do_with_state<F, T>(statelock: &Mutex<State>, func: F) -> T
+    where F: Fn(&mut State) -> T
+{
     let mut state = statelock.lock().unwrap();
     let t = func(&mut *state);
     t
@@ -42,7 +43,7 @@ impl Window {
         }
         Window {
             buf: buf,
-            index: do_with_state(state.clone(), |s| {
+            index: do_with_state(&*state, |s| {
                 let n = s.next_window_index;
                 s.next_window_index += 1;
                 n
