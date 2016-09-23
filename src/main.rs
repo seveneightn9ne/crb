@@ -98,7 +98,7 @@ fn startup() -> Result<bool, Box<Error>> {
         let event = rustbox.poll_event(false);
         match event {
             Ok(rustbox::Event::KeyEvent(key)) => {
-                let cmd = mode::map(window1.mode.clone(), key);
+                let cmd = state::do_safe(&*state, |s| mode::map(window1.mode.clone(), key, s));
                 // Remove num prefix if you didn't type a number
                 match cmd {
                     Command::Digit(_) => {}
@@ -146,7 +146,7 @@ fn startup() -> Result<bool, Box<Error>> {
         }
         // TODO handle errors
         if let Ok(rustbox::Event::KeyEvent(key)) = event {
-            let cmd = mode::map(window1.mode.clone(), key);
+            let cmd = state::do_safe(&*state, |s| mode::map(window1.mode.clone(), key, s));
             let _ = window3.clear();
             let _ = window3.insert_s(&format!("{:?}", event));
             let _ = window3.insert('\n');
