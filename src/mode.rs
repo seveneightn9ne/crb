@@ -24,6 +24,7 @@ pub enum Command {
     RecompileSelf,
     Save,
     Digit(u32),
+    FocusWindow(u32),
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +70,7 @@ pub fn map(mode: Mode, key: Key, state: &mut state::State) -> Command {
                 Key::Char('r') => Command::RecompileSelf,
                 Key::Char(' ') => Command::Save,
                 Key::Char(d) if d.is_digit(10) => Command::Digit(d.to_digit(10).unwrap()),
+                Key::Char('w') => Command::FocusWindow(state.num_prefix),
                 _ => Command::Unknown,
             }
         }

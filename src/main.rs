@@ -75,63 +75,65 @@ fn startup() -> Result<bool, Box<Error>> {
     let width = rustbox.width() as i32;
     let height = rustbox.height() as i32;
 
-    let mut window1 = Window::new(buf1,
+    let window1 = Window::new(buf1,
                                   Point::new(0, 0),
                                   Size::new(width, height - 10),
                                   state.clone());
-    let mut window2 = Window::new(buf2,
+    let window2 = Window::new(buf2,
                                   Point::new(0, height - 10),
                                   Size::new(width, 10),
                                   state.clone());
-    let mut window3 = Window::new(buf3,
+    let window3 = Window::new(buf3,
                                   Point::new(width / 2, 2),
                                   Size::new(width / 2 - 1, 4),
                                   state.clone());
+    let mut windows = vec![window1, window2, window3];
+    let mut fwi = 0;
+
 
     loop {
-        graphics::render(&rustbox, &window1);
-        graphics::render(&rustbox, &window2);
-        graphics::render(&rustbox, &window3);
+        graphics::render(&rustbox, &windows[0]);
+        graphics::render(&rustbox, &windows[1]);
+        graphics::render(&rustbox, &windows[2]);
 
         rustbox.present();
 
         let event = rustbox.poll_event(false);
         match event {
             Ok(rustbox::Event::KeyEvent(key)) => {
-                let cmd = state::do_safe(&*state, |s| mode::map(window1.mode.clone(), key, s));
-                // Remove num prefix if you didn't type a number
-                match cmd {
-                    Command::Digit(_) => {}
-                    _ => state::do_safe(&*state, |s| s.end_num_prefix()),
-                }
+                let cmd = state::do_safe(&*state, |s| mode::map(windows[fwi].mode.clone(), key, s));
                 let res = match cmd {
                     Command::Quit => break,
-                    Command::MoveUp(_) => window1.move_cursors(&cmd),
-                    Command::MoveDown(_) => window1.move_cursors(&cmd),
-                    Command::MoveLeft(_) => window1.move_cursors(&cmd),
-                    Command::MoveRight(_) => window1.move_cursors(&cmd),
-                    Command::Insert(c) => window1.insert(c),
-                    Command::Delete(d) => window1.delete(d),
-                    Command::NewLine => window1.insert('\n'),
-                    Command::Scroll(_) => window1.scroll(&cmd),
+                    Command::MoveUp(_) => windows[fwi].move_cursors(&cmd),
+                    Command::MoveDown(_) => windows[fwi].move_cursors(&cmd),
+                    Command::MoveLeft(_) => windows[fwi].move_cursors(&cmd),
+                    Command::MoveRight(_) => windows[fwi].move_cursors(&cmd),
+                    Command::Insert(c) => windows[fwi].insert(c),
+                    Command::Delete(d) => windows[fwi].delete(d),
+                    Command::NewLine => windows[fwi].insert('\n'),
+                    Command::Scroll(_) => windows[fwi].scroll(&cmd),
                     Command::ChangeMode(m) => {
-                        window1.mode = m;
+                        windows[fwi].mode = m;
                         Ok(())
                     }
                     Command::RecompileSelf => {
                         // TODO handle error
-                        let _ = window2.clear();
+                        let _ = windows[2].clear();
                         let res = hacks::recompile();
                         let restart =
-                            res.and_then(|output| fill_compilation_buffer(&mut window2, output));
+                            res.and_then(|output| fill_compilation_buffer(&mut windows[1], output));
                         if let Ok(true) = restart {
                             return Ok(true);
                         }
                         restart.and(Ok(()))
                     }
-                    Command::Save => window1.save(),
+                    Command::Save => windows[0].save(),
                     Command::Digit(d) => {
                         state::do_safe(&*state, |s| s.type_num_prefix(d));
+                        Ok(())
+                    }
+                    Command::FocusWindow(n) => {
+                        fwi = (n as usize) - 1;
                         Ok(())
                     }
                     _ => Ok(()), //TODO show this somewhere
@@ -146,15 +148,19 @@ fn startup() -> Result<bool, Box<Error>> {
         }
         // TODO handle errors
         if let Ok(rustbox::Event::KeyEvent(key)) = event {
-            let cmd = state::do_safe(&*state, |s| mode::map(window1.mode.clone(), key, s));
-            let _ = window3.clear();
-            let _ = window3.insert_s(&format!("{:?}", event));
-            let _ = window3.insert('\n');
-            let _ = window3.insert_s(&format!("{:?}", cmd));
-            let _ = window3.insert('\n');
-            let _ =
-                window3.insert_s(&format!("state.num_prefix = {:?}",
-                                          state.lock().unwrap().num_prefix));
+            let cmd = state::do_safe(&*state, |s| mode::map(windows[fwi].mode.clone(), key, s));
+            // Remove num prefix if you didn't type a number
+            match cmd {
+                Command::Digit(_) => {}
+                _ => state::do_safe(&*state, |s| s.end_num_prefix()),
+            }
+            let _ = windows[2].clear();
+            let _ = windows[2].insert_s(&format!("{:?}", event));
+            let _ = windows[2].insert('\n');
+            let _ = windows[2].insert_s(&format!("{:?}", cmd));
+            let _ = windows[2].insert('\n');
+            let _ = windows[2]
+                .insert_s(&format!("state.num_prefix = {:?}", state.lock().unwrap().num_prefix));
         }
     }
 
