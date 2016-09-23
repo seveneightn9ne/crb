@@ -85,7 +85,7 @@ fn startup() -> Result<bool, Box<Error>> {
                                   state.clone());
     let mut window3 = Window::new(buf3,
                                   Point::new(width / 2, 2),
-                                  Size::new(width / 2 - 1, 2),
+                                  Size::new(width / 2 - 1, 4),
                                   state.clone());
 
     loop {
@@ -99,6 +99,11 @@ fn startup() -> Result<bool, Box<Error>> {
         match event {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 let cmd = mode::map(window1.mode.clone(), key);
+                // Remove num prefix if you didn't type a number
+                match cmd {
+                    Command::Digit(_) => {}
+                    _ => state::do_safe(&*state, |s| s.end_num_prefix()),
+                }
                 let res = match cmd {
                     Command::Quit => break,
                     Command::MoveUp(_) => window1.move_cursors(&cmd),
@@ -125,6 +130,10 @@ fn startup() -> Result<bool, Box<Error>> {
                         restart.and(Ok(()))
                     }
                     Command::Save => window1.save(),
+                    Command::Digit(d) => {
+                        state::do_safe(&*state, |s| s.type_num_prefix(d));
+                        Ok(())
+                    }
                     _ => Ok(()), //TODO show this somewhere
                 };
                 if let Err(e) = res {
@@ -142,6 +151,10 @@ fn startup() -> Result<bool, Box<Error>> {
             let _ = window3.insert_s(&format!("{:?}", event));
             let _ = window3.insert('\n');
             let _ = window3.insert_s(&format!("{:?}", cmd));
+            let _ = window3.insert('\n');
+            let _ =
+                window3.insert_s(&format!("state.num_prefix = {:?}",
+                                          state.lock().unwrap().num_prefix));
         }
     }
 

@@ -6,6 +6,7 @@ use geometry::{Point, Size};
 use mode::{Command, Direction, Mode};
 use buffer::{Display, Wrap};
 use errors::{CrbResult, CrbError};
+use state;
 use state::State;
 use logging;
 
@@ -25,14 +26,6 @@ pub struct Window {
     index: i32,
 }
 
-fn do_with_state<F, T>(statelock: &Mutex<State>, func: F) -> T
-    where F: Fn(&mut State) -> T
-{
-    let mut state = statelock.lock().unwrap();
-    let t = func(&mut *state);
-    t
-}
-
 impl Window {
     pub fn new(buf: Mutex<Buffer>, topleft: Point, size: Size, state: Arc<Mutex<State>>) -> Window {
         let mut cursors = Vec::new();
@@ -43,7 +36,7 @@ impl Window {
         }
         Window {
             buf: buf,
-            index: do_with_state(&*state, |s| {
+            index: state::do_safe(&*state, |s| {
                 let n = s.next_window_index;
                 s.next_window_index += 1;
                 n

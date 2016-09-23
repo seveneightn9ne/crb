@@ -22,6 +22,7 @@ pub enum Command {
     ChangeMode(Mode),
     RecompileSelf,
     Save,
+    Digit(u32),
 }
 
 #[derive(Debug, Clone)]
@@ -66,6 +67,7 @@ pub fn map(mode: Mode, key: Key) -> Command {
                 Key::Char('v') => Command::Scroll(-1),
                 Key::Char('r') => Command::RecompileSelf,
                 Key::Char(' ') => Command::Save,
+                Key::Char(d) if d.is_digit(10) => Command::Digit(d.to_digit(10).unwrap()),
                 _ => Command::Unknown,
             }
         }
