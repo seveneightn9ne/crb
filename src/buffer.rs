@@ -135,6 +135,7 @@ impl Buffer {
     pub fn new_file(path: &str, state: Arc<Mutex<State>>) -> Buffer {
         let mut buf = Buffer::empty(state);
         buf.file_path = Some(path.to_string());
+        buf.unsaved = true;
         buf
     }
 
@@ -164,6 +165,7 @@ impl Buffer {
                 try!(w.write_all(b"\n")
                     .map_err(|e| CrbError::new(&format!("error while saving {}", e))));
             }
+            self.unsaved = false;
             Ok(())
         } else {
             return Err(CrbError::new("cannot save with no file path"));
@@ -220,6 +222,9 @@ impl Buffer {
     }
 
     pub fn insert_text_before(&mut self, anchor: &Anchor, text: char) -> Result<(), CrbError> {
+        if self.file_path.is_some() {
+            self.unsaved = true;
+        }
         if text == '\t' {
             for _ in 0..4 {
                 try!(self.insert_text_before(anchor, ' '));
@@ -245,6 +250,9 @@ impl Buffer {
     }
 
     pub fn delete_at(&mut self, anchor: &Anchor, d: &Direction) -> Result<(), CrbError> {
+        if self.file_path.is_some() {
+            self.unsaved = true;
+        }
         let err = CrbError::new("no such anchor");
         let pos = try!(self.anchors.get(&anchor.id).ok_or(err)).clone();
         let pos: Position = match *d {
@@ -299,6 +307,9 @@ impl Buffer {
             .iter()
             .map(|(&a, _)| (a, Position::new(0, 0)))
             .collect::<HashMap<_, _>>();
+        if self.file_path.is_some() {
+            self.unsaved = true;
+        }
         Ok(())
     }
 

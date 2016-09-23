@@ -76,17 +76,17 @@ fn startup() -> Result<bool, Box<Error>> {
     let height = rustbox.height() as i32;
 
     let window1 = Window::new(buf1,
-                                  Point::new(0, 0),
-                                  Size::new(width, height - 10),
-                                  state.clone());
+                              Point::new(0, 0),
+                              Size::new(width, height - 10),
+                              state.clone());
     let window2 = Window::new(buf2,
-                                  Point::new(0, height - 10),
-                                  Size::new(width, 10),
-                                  state.clone());
+                              Point::new(0, height - 10),
+                              Size::new(width, 10),
+                              state.clone());
     let window3 = Window::new(buf3,
-                                  Point::new(width / 2, 2),
-                                  Size::new(width / 2 - 1, 4),
-                                  state.clone());
+                              Point::new(width / 2, 2),
+                              Size::new(width / 2 - 1, 4),
+                              state.clone());
     let mut windows = vec![window1, window2, window3];
     let mut fwi = 0;
 
@@ -192,3 +192,4 @@ fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult
         Ok(false)
     }
 }
+

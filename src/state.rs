@@ -13,7 +13,7 @@ impl State {
         return State {
             settings: Settings::new(),
             next_window_index: 1,
-            num_prefix: 0,
+            num_prefix: 1,
             typing_num_prefix: false,
         };
     }
