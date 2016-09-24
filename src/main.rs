@@ -192,4 +192,3 @@ fn fill_compilation_buffer(w: &mut Window, output: process::Output) -> CrbResult
         Ok(false)
     }
 }
-

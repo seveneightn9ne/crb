@@ -349,10 +349,7 @@ impl Buffer {
                 let line_num_str = (buf_y + 1).to_string();
                 let mut line_num_chars = line_num_str.chars();
                 let offset = col_size - line_num_chars.clone().count();
-                let color = match self.state.lock().unwrap().settings.get("color-linenumbers") {
-                    Some(&settings::Value::Color(c)) => c,
-                    _ => Color::White,
-                };
+                let color = self.state.lock().unwrap().settings.lineNumColor;
                 for i in 0..col_size {
                     if offset <= i {
                         let d = Display {

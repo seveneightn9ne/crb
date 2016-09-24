@@ -3,6 +3,7 @@ use rustbox::Color;
 
 pub enum Value {
     Color(Color),
+
     #[allow(dead_code)]
     Number(i32),
     #[allow(dead_code)]
@@ -10,24 +11,26 @@ pub enum Value {
 }
 
 pub struct Settings {
-    settings: HashMap<String, Value>, // = HashMap::new();
+    pub lineNumColor: Color,
+    pub insertSpaces: bool, // False => tab
+    pub numSpacesPerTab: u8,
 }
 
 impl Settings {
     pub fn new() -> Settings {
-        let mut s = HashMap::new();
-
-        // TODO this isn't being used.
-        s.insert("color-linenumbers".to_string(), Value::Color(Color::Yellow));
-        return Settings { settings: s };
+        return Settings {
+            lineNumColor: Color::Yellow,
+            insertSpaces: true,
+            numSpacesPerTab: 4,
+        };
     }
 
-    pub fn get(&self, setting: &str) -> Option<&Value> {
-        self.settings.get(&setting.to_string())
-    }
-
-    #[allow(dead_code)]
-    pub fn set(&mut self, setting: &str, value: Value) {
-        self.settings.insert(setting.to_string(), value);
-    }
+    // pub fn get(&self, setting: &str) -> Option<&Value> {
+    // self.settings.get(&setting.to_string())
+    // }
+    //
+    // #[allow(dead_code)]
+    // pub fn set(&mut self, setting: &str, value: Value) {
+    // self.settings.insert(setting.to_string(), value);
+    // }
 }
