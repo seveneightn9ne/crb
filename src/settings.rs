@@ -13,15 +13,17 @@ pub enum Value {
 pub struct Settings {
     pub lineNumColor: Color,
     pub insertSpaces: bool, // False => tab
-    pub numSpacesPerTab: u8,
+    pub numSpacesPerTab: usize,
+    pub tabWidth: usize,
 }
 
 impl Settings {
     pub fn new() -> Settings {
         return Settings {
             lineNumColor: Color::Yellow,
-            insertSpaces: true,
+            insertSpaces: false,
             numSpacesPerTab: 4,
+            tabWidth: 4,
         };
     }
 

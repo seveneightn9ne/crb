@@ -92,7 +92,7 @@ pub struct Display {
     pub symbol: Symbol,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Symbol {
     Char(char),
     ColorChar(char, Color),
@@ -225,8 +225,9 @@ impl Buffer {
         if self.file_path.is_some() {
             self.unsaved = true;
         }
-        if text == '\t' {
-            for _ in 0..4 {
+        if text == '\t' && self.state.lock().unwrap().settings.insertSpaces {
+            let n = self.state.lock().unwrap().settings.numSpacesPerTab;
+            for _ in 0..n {
                 try!(self.insert_text_before(anchor, ' '));
             }
             return Ok(());
@@ -364,12 +365,13 @@ impl Buffer {
             }
 
             let mut skip_for = 0;
+            let mut skip_symbol = Symbol::Skip;
             for view_x in (view_x + 1)..size.width {
                 if skip_for > 0 {
                     let d = Display {
                         x: view_x,
                         y: view_y,
-                        symbol: Symbol::Skip,
+                        symbol: skip_symbol.clone(),
                     };
                     f(&d);
                     skip_for -= 1;
@@ -397,11 +399,18 @@ impl Buffer {
                 }
 
                 let s = match line_chars.next() {
+                    Some('\t') => {
+                        let cwidth = self.state.lock().unwrap().settings.tabWidth;
+                        skip_for = cwidth - 1;
+                        skip_symbol = Symbol::Void;
+                        Symbol::Void
+                    }
                     Some(c) => {
                         let cwidth = UnicodeWidthChar::width(c).unwrap_or(1);
                         if cwidth > 1 {
                             skip_for = cwidth - 1;
                         }
+                        skip_symbol = Symbol::Skip;
                         Symbol::Char(c)
                     }
                     None => Symbol::Void,
